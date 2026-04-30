@@ -4,19 +4,11 @@ import { Navbar } from "../components/Navbar";
 import { HeroSection } from "../components/HeroSection";
 import { FeaturesSection } from "../components/FeaturesSection";
 import { Footer } from "../components/Footer";
-import { DiabetesTestModal } from "../components/DiabetesTestModal";
-import { ResultPopup } from "../components/ResultPopup";
-
-type ModalState = "none" | "test" | "result-negative" | "result-positive";
 
 export default function LandingPage() {
-  const [modalState, setModalState] = useState<ModalState>("none");
   const navigate = useNavigate();
 
-  const handleOpenTest = () => setModalState("test");
-  const handleTestResult = (isAtRisk: boolean) =>
-    setModalState(isAtRisk ? "result-positive" : "result-negative");
-  const handleCloseAll = () => setModalState("none");
+  const handleOpenTest = () => navigate("/diabetes-test");
 
   return (
     <div className="min-h-screen bg-white">
@@ -78,15 +70,6 @@ export default function LandingPage() {
 
       <Footer />
 
-      {modalState === "test" && (
-        <DiabetesTestModal onClose={handleCloseAll} onResult={handleTestResult} />
-      )}
-      {modalState === "result-negative" && (
-        <ResultPopup isAtRisk={false} onClose={handleCloseAll} />
-      )}
-      {modalState === "result-positive" && (
-        <ResultPopup isAtRisk={true} onClose={handleCloseAll} onNavigateToAuth={() => navigate("/auth")} />
-      )}
     </div>
   );
 }

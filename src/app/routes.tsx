@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from "react-router";
 import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
+import DiabetesTestPage from "./pages/DiabetesTestPage";
 import PatientDashboard from "./pages/PatientDashboard";
 import DoctorDashboard from "./pages/DoctorDashboard";
 import GlucoseLogsPage from "./pages/GlucoseLogsPage";
@@ -12,6 +13,7 @@ import PatientSettingsPage from "./pages/PatientSettingsPage";
 export const router = createBrowserRouter([
   { path: "/",                                         Component: LandingPage },
   { path: "/auth",                                     Component: AuthPage },
+  { path: "/diabetes-test",                            Component: DiabetesTestPage },
   { path: "/dashboard/patient",                        Component: PatientDashboard },
   { path: "/dashboard/patient/glucose",                Component: GlucoseLogsPage },
   { path: "/dashboard/patient/ai-summary",             Component: AISummaryPage },
