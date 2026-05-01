@@ -134,6 +134,7 @@ const sidebarNav = [
   { icon: LayoutDashboard, label: "Dashboard",    path: "/dashboard/patient" },
   { icon: Droplets,        label: "Glucose Logs", path: "/dashboard/patient/glucose" },
   { icon: Utensils,        label: "Meal Logs",    path: "/dashboard/patient/meals", active: true },
+  { icon: Sparkles,        label: "AI Assistant", path: "/dashboard/patient/ai-chat" },
   { icon: Settings,        label: "Settings",     path: "/dashboard/patient/settings" },
 ];
 

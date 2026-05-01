@@ -737,36 +737,7 @@ export default function PatientDetailsPage() {
             </div>
 
             {/* ── HbA1c History ── */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-              <div className="flex items-center justify-between mb-5">
-                <div>
-                  <h3 className="text-slate-900 text-sm" style={{ fontWeight: 700 }}>HbA1c History</h3>
-                  <p className="text-slate-400 text-xs mt-0.5">6-month trend · %</p>
-                </div>
-                <div className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg ${hba1cTrend < 0 ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>
-                  {hba1cTrend < 0 ? <TrendingDown className="w-3.5 h-3.5" /> : <TrendingUp className="w-3.5 h-3.5" />}
-                  {hba1cTrend < 0 ? `↓ ${Math.abs(hba1cTrend).toFixed(1)}% improved` : `↑ ${hba1cTrend.toFixed(1)}% increased`}
-                </div>
-              </div>
-              <ResponsiveContainer width="100%" height={180}>
-                <LineChart data={p.hba1cHistory} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#94a3b8" }} tickLine={false} axisLine={false} />
-                  <YAxis tick={{ fontSize: 10, fill: "#94a3b8" }} tickLine={false} axisLine={false} domain={[4, 12]} />
-                  <Tooltip content={<GenericTooltip unit="%" />} />
-                  <ReferenceLine y={6.5} stroke="#10b981" strokeDasharray="4 4" strokeWidth={1.5} label={{ value: "Normal <6.5%", position: "right", fontSize: 9, fill: "#10b981" }} />
-                  <ReferenceLine y={8.0} stroke="#ef4444" strokeDasharray="4 4" strokeWidth={1.5} label={{ value: "Poor >8%", position: "right", fontSize: 9, fill: "#ef4444" }} />
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke="#6366f1"
-                    strokeWidth={2.5}
-                    dot={{ fill: "#6366f1", r: 4, strokeWidth: 2, stroke: "white" }}
-                    activeDot={{ r: 6 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            
 
           </div>
         </div>

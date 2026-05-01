@@ -6,7 +6,7 @@ import {
   User, Heart, Save, AlertCircle, CheckCircle, Loader2,
   Download, ArrowLeft, Stethoscope, Utensils,
   Target, Scale, Ruler, Cake, FileText, FileSpreadsheet,
-  Info,
+  Info, Sparkles,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
@@ -37,6 +37,7 @@ const sidebarNav = [
   { icon: LayoutDashboard, label: "Dashboard",    path: "/dashboard/patient",          active: false },
   { icon: Droplets,        label: "Glucose Logs", path: "/dashboard/patient/glucose",  active: false },
   { icon: Utensils,        label: "Meal Logs",    path: "/dashboard/patient/meals",    active: false },
+  { icon: Sparkles,        label: "AI Assistant", path: "/dashboard/patient/ai-chat",  active: false },
   { icon: Settings,        label: "Settings",     path: "/dashboard/patient/settings", active: true },
 ];
 

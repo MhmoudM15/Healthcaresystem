@@ -5,7 +5,7 @@ import {
   Bell, Settings, LogOut, Menu, X, Calendar,
   Clock, Plus, Trash2,
   AlertTriangle, ArrowUpRight, ArrowDownRight, Minus,
-  Loader2, Brain, Info,
+  Loader2, Brain, Info, Sparkles,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
@@ -45,6 +45,7 @@ const sidebarNav = [
   { icon: LayoutDashboard, label: "Dashboard",    path: "/dashboard/patient" },
   { icon: Droplets,        label: "Glucose Logs", path: "/dashboard/patient/glucose", active: true },
   { icon: Utensils,        label: "Meal Logs",    path: "/dashboard/patient/meals" },
+  { icon: Sparkles,        label: "AI Assistant", path: "/dashboard/patient/ai-chat" },
   { icon: Settings,        label: "Settings",     path: "/dashboard/patient/settings" },
 ];
 
