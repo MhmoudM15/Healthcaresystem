@@ -36,6 +36,7 @@ interface PatientAlert {
 
 const sidebarNav = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard/doctor", active: true },
+  { icon: Users, label: "Patients", path: "/dashboard/doctor/patients", active: false },
 ];
 
 // ─── Mock Patient Alerts ──────────────────────────────────────────────────────

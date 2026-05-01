@@ -4,6 +4,7 @@ import AuthPage from "./pages/AuthPage";
 import DiabetesTestPage from "./pages/DiabetesTestPage";
 import PatientDashboard from "./pages/PatientDashboard";
 import DoctorDashboard from "./pages/DoctorDashboard";
+import PatientDetailsPage from "./pages/PatientDetailsPage";
 import GlucoseLogsPage from "./pages/GlucoseLogsPage";
 import MealLogsPage from "./pages/MealLogsPage";
 import AISummaryPage from "./pages/AISummaryPage";
@@ -19,5 +20,6 @@ export const router = createBrowserRouter([
   { path: "/dashboard/patient/ai-summary",   Component: AISummaryPage },
   { path: "/dashboard/patient/settings",     Component: PatientSettingsPage },
   { path: "/dashboard/doctor",               Component: DoctorDashboard },
+  { path: "/dashboard/doctor/patients",      Component: PatientDetailsPage },
   { path: "*", Component: () => <Navigate to="/" replace /> },
 ]);
