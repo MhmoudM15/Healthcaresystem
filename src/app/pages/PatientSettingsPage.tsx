@@ -487,44 +487,7 @@ export default function PatientSettingsPage() {
             </div>
 
             {/* ── Section 3: Notification Settings ───────────────────────── */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-              <div className="flex items-center gap-3 mb-5 pb-4 border-b border-slate-100">
-                <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center">
-                  <Bell className="w-5 h-5 text-amber-600" strokeWidth={1.8} />
-                </div>
-                <div>
-                  <h2 className="text-slate-900" style={{ fontWeight: 700, fontSize: "1.1rem" }}>Notification Settings</h2>
-                  <p className="text-slate-400 text-xs">Control how you receive health alerts</p>
-                </div>
-              </div>
-
-              <div className="divide-y divide-slate-100">
-                <ToggleSwitch
-                  checked={notifications.emailAlerts}
-                  onChange={(v) => updateNotification("emailAlerts", v)}
-                  label="Email Alerts"
-                  description="Receive health notifications via email"
-                />
-                <ToggleSwitch
-                  checked={notifications.inAppAlerts}
-                  onChange={(v) => updateNotification("inAppAlerts", v)}
-                  label="In-App Notifications"
-                  description="Show notifications within the app"
-                />
-                <ToggleSwitch
-                  checked={notifications.glucoseAlerts}
-                  onChange={(v) => updateNotification("glucoseAlerts", v)}
-                  label="Glucose Level Alerts"
-                  description="Alert when glucose is outside target range"
-                />
-                <ToggleSwitch
-                  checked={notifications.doctorMessages}
-                  onChange={(v) => updateNotification("doctorMessages", v)}
-                  label="Doctor Messages"
-                  description="Alert when your doctor sends a message or review"
-                />
-              </div>
-            </div>
+            
 
             {/* ── Section 4: Data Export ─────────────────────────────────── */}
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">

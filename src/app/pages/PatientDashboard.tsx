@@ -318,7 +318,7 @@ export default function PatientDashboard() {
         <div className="fixed inset-0 z-40 bg-slate-900/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* ── Sidebar ──────────────────────────────────────────────────────────── */}
+      {/* ── Sidebar ─────────────────────────��────────────────────────────────── */}
       <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-60 bg-white border-r border-slate-100 flex flex-col transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
         {/* Logo */}
         <div className="flex items-center justify-between px-5 h-16 border-b border-slate-100 flex-shrink-0">
@@ -395,14 +395,7 @@ export default function PatientDashboard() {
               <Plus className="w-3.5 h-3.5" /> Quick Log
             </button>
             <div className="relative">
-              <button className="relative p-2 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors">
-                <Bell className="w-5 h-5" />
-                {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-semibold">
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
+              
             </div>
           </div>
         </header>
@@ -522,45 +515,38 @@ export default function PatientDashboard() {
               </button>
             </div>
 
-            {/* ── Bottom Row: Activity Feed + Notifications ──────────────────── */}
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-
-              {/* Recent Activity — 3 cols */}
-              <div className="lg:col-span-3 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-slate-50">
-                  <div>
-                    <h2 className="text-slate-900 text-sm" style={{ fontWeight: 700 }}>Recent Activity</h2>
-                    <p className="text-slate-400 text-xs mt-0.5">Last {Math.min(activity.length, 5)} logs</p>
-                  </div>
-                  <button className="text-xs text-blue-600 font-semibold hover:text-blue-700 transition-colors">View all</button>
+            {/* ── Bottom Row: Activity Feed ──────────────────── */}
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-slate-50">
+                <div>
+                  <h2 className="text-slate-900 text-sm" style={{ fontWeight: 700 }}>Recent Activity</h2>
+                  <p className="text-slate-400 text-xs mt-0.5">Last {Math.min(activity.length, 5)} logs</p>
                 </div>
-
-                <div className="divide-y divide-slate-50">
-                  {activity.slice(0, 5).map((log) => (
-                    <div key={log.id} className="flex items-center gap-3.5 px-5 py-3.5 hover:bg-slate-50/60 transition-colors">
-                      <ActivityIcon type={log.type} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-slate-800 text-sm truncate" style={{ fontWeight: 600 }}>{log.title}</p>
-                        <p className="text-slate-400 text-xs truncate mt-0.5">{log.detail}</p>
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {log.trend === "up" && <ArrowUpRight className="w-3.5 h-3.5 text-red-400" />}
-                        {log.trend === "down" && <ArrowDownRight className="w-3.5 h-3.5 text-blue-400" />}
-                        <span className="text-slate-300 text-xs whitespace-nowrap">{log.time}</span>
-                      </div>
-                    </div>
-                  ))}
-
-                  {activity.length === 0 && (
-                    <div className="py-10 text-center text-slate-400 text-sm">
-                      No activity yet. Use the quick actions above to get started.
-                    </div>
-                  )}
-                </div>
+                <button className="text-xs text-blue-600 font-semibold hover:text-blue-700 transition-colors">View all</button>
               </div>
 
-              {/* Notifications — 2 cols */}
-              
+              <div className="divide-y divide-slate-50">
+                {activity.slice(0, 5).map((log) => (
+                  <div key={log.id} className="flex items-center gap-3.5 px-5 py-3.5 hover:bg-slate-50/60 transition-colors">
+                    <ActivityIcon type={log.type} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-slate-800 text-sm truncate" style={{ fontWeight: 600 }}>{log.title}</p>
+                      <p className="text-slate-400 text-xs truncate mt-0.5">{log.detail}</p>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {log.trend === "up" && <ArrowUpRight className="w-3.5 h-3.5 text-red-400" />}
+                      {log.trend === "down" && <ArrowDownRight className="w-3.5 h-3.5 text-blue-400" />}
+                      <span className="text-slate-300 text-xs whitespace-nowrap">{log.time}</span>
+                    </div>
+                  </div>
+                ))}
+
+                {activity.length === 0 && (
+                  <div className="py-10 text-center text-slate-400 text-sm">
+                    No activity yet. Use the quick actions above to get started.
+                  </div>
+                )}
+              </div>
             </div>
 
           </div>
