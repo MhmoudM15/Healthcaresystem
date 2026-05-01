@@ -158,9 +158,7 @@ export function FeaturesSection() {
             <button className="bg-white text-blue-600 hover:bg-blue-50 px-6 py-3 rounded-xl font-semibold text-sm transition-colors shadow-md">
               Register — It's Free
             </button>
-            <button className="bg-white/10 hover:bg-white/20 border border-white/30 text-white px-6 py-3 rounded-xl font-semibold text-sm transition-colors backdrop-blur-sm">
-              Learn More
-            </button>
+            
           </div>
         </div>
       </div>

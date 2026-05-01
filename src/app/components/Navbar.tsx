@@ -26,17 +26,7 @@ export function Navbar() {
           </div>
 
           {/* Desktop Nav Links */}
-          <div className="hidden md:flex items-center gap-6">
-            <a href="#features" className="text-slate-600 hover:text-blue-600 transition-colors text-sm">
-              Features
-            </a>
-            <a href="#how-it-works" className="text-slate-600 hover:text-blue-600 transition-colors text-sm">
-              How It Works
-            </a>
-            <a href="#about" className="text-slate-600 hover:text-blue-600 transition-colors text-sm">
-              About
-            </a>
-          </div>
+          
 
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center gap-3">

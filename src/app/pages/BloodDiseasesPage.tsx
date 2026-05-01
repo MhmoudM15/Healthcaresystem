@@ -49,7 +49,7 @@ const sidebarNav = [
   { icon: LayoutDashboard, label: "Dashboard",          path: "/dashboard/patient",              active: false },
   { icon: Droplets,        label: "Glucose Logs",       path: "/dashboard/patient/glucose",      active: false },
   { icon: ShieldAlert,     label: "Blood Disease Check",path: "/dashboard/patient/blood-disease",active: true },
-  { icon: Settings,        label: "Settings",           path: null,                              active: false },
+  { icon: Settings,        label: "Settings",           path: "/dashboard/patient/settings",     active: false },
 ];
 
 // ─── Tooltip Component ────────────────────────────────────────────────────────
