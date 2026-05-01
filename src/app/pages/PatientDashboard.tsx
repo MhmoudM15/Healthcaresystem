@@ -4,7 +4,7 @@ import {
   Activity, LayoutDashboard, Bell, Settings, LogOut,
   Menu, X, Droplets, Utensils, Clock, ChevronRight,
   AlertTriangle, CheckCircle, Info, Loader2, Plus,
-  ArrowUpRight, ArrowDownRight, Minus,
+  ArrowUpRight, ArrowDownRight, Minus, Sparkles,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
@@ -43,9 +43,10 @@ const statusConfig: Record<ConditionStatus, { bg: string; text: string; border: 
 };
 
 const sidebarNav = [
-  { icon: LayoutDashboard, label: "Dashboard",    path: "/dashboard/patient",          active: true },
+  { icon: LayoutDashboard, label: "Dashboard",    path: "/dashboard/patient",          active: true  },
   { icon: Droplets,        label: "Glucose Logs", path: "/dashboard/patient/glucose",  active: false },
   { icon: Utensils,        label: "Meal Logs",    path: "/dashboard/patient/meals",    active: false },
+  { icon: Sparkles,        label: "AI Assistant", path: "/dashboard/patient/ai-chat",  active: false },
   { icon: Settings,        label: "Settings",     path: "/dashboard/patient/settings", active: false },
 ];
 
@@ -318,7 +319,7 @@ export default function PatientDashboard() {
         <div className="fixed inset-0 z-40 bg-slate-900/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* ── Sidebar ─────────────────────────��────────────────────────────────── */}
+      {/* ── Sidebar ────────────────────────────────────────────────────────── */}
       <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-60 bg-white border-r border-slate-100 flex flex-col transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
         {/* Logo */}
         <div className="flex items-center justify-between px-5 h-16 border-b border-slate-100 flex-shrink-0">
