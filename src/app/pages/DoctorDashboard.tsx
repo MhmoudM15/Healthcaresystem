@@ -4,13 +4,13 @@ import {
   Activity, LayoutDashboard, Bell, Settings, LogOut, Menu, X,
   Users, AlertTriangle, Clock, CheckCircle, ChevronRight,
   FileText, Send, Loader2, Filter, Search, Eye, MessageSquare,
-  Droplets, ShieldAlert, TrendingUp, Calendar, Stethoscope,
+  Droplets, TrendingUp, Calendar, Stethoscope,
   AlertOctagon, Info,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type AlertType = "diabetes-critical" | "blood-disease-high" | "diabetes-moderate" | "blood-disease-moderate";
+type AlertType = "diabetes-critical" | "diabetes-moderate";
 type AlertStatus = "unread" | "read" | "reviewed";
 
 interface PatientAlert {
@@ -30,13 +30,6 @@ interface PatientAlert {
       maxGlucose: number;
       spikeCount: number;
       lastReading: number;
-    };
-    // For blood disease alerts
-    bloodData?: {
-      topCondition: string;
-      riskPercent: number;
-      hemoglobin?: number;
-      wbc?: number;
     };
   };
 }
@@ -66,24 +59,6 @@ const initialAlerts: PatientAlert[] = [
     },
   },
   {
-    id: "alert-002",
-    patientName: "Emily Rodriguez",
-    patientId: "P-3921",
-    alertType: "blood-disease-high",
-    severity: "critical",
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-    status: "unread",
-    summary: "High risk for Iron-Deficiency Anemia detected (72% risk). Low hemoglobin: 11.2 g/dL with symptoms.",
-    reportData: {
-      bloodData: {
-        topCondition: "Iron-Deficiency Anemia",
-        riskPercent: 72,
-        hemoglobin: 11.2,
-        wbc: 12500,
-      },
-    },
-  },
-  {
     id: "alert-003",
     patientName: "Michael Chen",
     patientId: "P-1583",
@@ -98,25 +73,6 @@ const initialAlerts: PatientAlert[] = [
         maxGlucose: 182,
         spikeCount: 5,
         lastReading: 165,
-      },
-    },
-  },
-  {
-    id: "alert-004",
-    patientName: "Sarah Thompson",
-    patientId: "P-4762",
-    alertType: "blood-disease-moderate",
-    severity: "moderate",
-    timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-    status: "reviewed",
-    summary: "Moderate risk for Thalassemia Minor (48% risk). Family history positive.",
-    doctorNotes: "Recommended complete iron panel and genetic counseling. Follow up in 2 weeks.",
-    reportData: {
-      bloodData: {
-        topCondition: "Thalassemia Minor",
-        riskPercent: 48,
-        hemoglobin: 12.8,
-        wbc: 7200,
       },
     },
   },
@@ -147,10 +103,8 @@ const alertTypeConfig: Record<AlertType, {
   iconColor: string;
   label: string;
 }> = {
-  "diabetes-critical":      { icon: Droplets,     iconBg: "bg-red-50",    iconColor: "text-red-600",   label: "Diabetes Critical" },
-  "blood-disease-high":     { icon: ShieldAlert,  iconBg: "bg-red-50",    iconColor: "text-red-600",   label: "Blood Disease High Risk" },
-  "diabetes-moderate":      { icon: Droplets,     iconBg: "bg-amber-50",  iconColor: "text-amber-600", label: "Diabetes Moderate" },
-  "blood-disease-moderate": { icon: ShieldAlert,  iconBg: "bg-amber-50",  iconColor: "text-amber-600", label: "Blood Disease Moderate" },
+  "diabetes-critical": { icon: Droplets, iconBg: "bg-red-50",   iconColor: "text-red-600",   label: "Diabetes Critical" },
+  "diabetes-moderate": { icon: Droplets, iconBg: "bg-amber-50", iconColor: "text-amber-600", label: "Diabetes Moderate" },
 };
 
 const severityConfig = {
@@ -285,46 +239,6 @@ function AlertDetailsModal({
                   </p>
                   <p className="text-amber-600 text-xs">occurrences</p>
                 </div>
-              </div>
-            )}
-
-            {alert.reportData.bloodData && (
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-red-50 border border-red-200 rounded-xl p-4 col-span-2">
-                  <p className="text-red-600 text-xs mb-1">Primary Condition Flagged</p>
-                  <p className="text-red-900 text-lg mb-1" style={{ fontWeight: 800 }}>
-                    {alert.reportData.bloodData.topCondition}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 h-2 bg-red-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-red-500"
-                        style={{ width: `${alert.reportData.bloodData.riskPercent}%` }}
-                      />
-                    </div>
-                    <span className="text-red-700 text-sm font-semibold">
-                      {alert.reportData.bloodData.riskPercent}%
-                    </span>
-                  </div>
-                </div>
-                {alert.reportData.bloodData.hemoglobin && (
-                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-                    <p className="text-slate-600 text-xs mb-1">Hemoglobin</p>
-                    <p className="text-slate-900 text-2xl" style={{ fontWeight: 800 }}>
-                      {alert.reportData.bloodData.hemoglobin}
-                    </p>
-                    <p className="text-slate-600 text-xs">g/dL</p>
-                  </div>
-                )}
-                {alert.reportData.bloodData.wbc && (
-                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-                    <p className="text-slate-600 text-xs mb-1">WBC Count</p>
-                    <p className="text-slate-900 text-2xl" style={{ fontWeight: 800 }}>
-                      {alert.reportData.bloodData.wbc.toLocaleString()}
-                    </p>
-                    <p className="text-slate-600 text-xs">cells/μL</p>
-                  </div>
-                )}
               </div>
             )}
           </div>
@@ -621,7 +535,7 @@ export default function DoctorDashboard() {
         <main className="flex-1 overflow-y-auto px-5 py-6">
           <div className="max-w-6xl mx-auto space-y-6">
 
-            {/* ── Header ──────────��─────────────────────────────────────── */}
+            {/* ── Header ───────────────────────────────────────────────── */}
             <div>
               <h1 className="text-slate-900 mb-2" style={{ fontWeight: 800, fontSize: "1.6rem", letterSpacing: "-0.02em" }}>
                 Patient Alerts

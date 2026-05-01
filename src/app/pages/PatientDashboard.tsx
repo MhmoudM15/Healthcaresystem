@@ -1,16 +1,16 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router";
 import {
-  Activity, LayoutDashboard, LineChart, Bell, Settings, LogOut,
-  Menu, X, Droplets, Utensils, ShieldAlert, Clock, ChevronRight,
-  AlertTriangle, CheckCircle, Info, Loader2, Plus, Calendar,
-  Stethoscope, ArrowUpRight, ArrowDownRight, Minus,
+  Activity, LayoutDashboard, Bell, Settings, LogOut,
+  Menu, X, Droplets, Utensils, Clock, ChevronRight,
+  AlertTriangle, CheckCircle, Info, Loader2, Plus,
+  ArrowUpRight, ArrowDownRight, Minus,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type ConditionStatus = "Critical" | "Mid" | "Low";
-type LogType = "glucose" | "meal" | "blood_check" | "alert";
+type LogType = "glucose" | "meal" | "alert";
 
 interface ActivityLog {
   id: number;
@@ -26,8 +26,7 @@ const initialActivity: ActivityLog[] = [
   { id: 1, type: "glucose", title: "Fasting Glucose Logged", detail: "112 mg/dL", time: "Today, 7:30 AM", trend: "up" },
   { id: 2, type: "meal",    title: "Breakfast Logged",       detail: "Oatmeal + fruit · ~65g carbs", time: "Today, 8:10 AM" },
   { id: 3, type: "glucose", title: "Post-meal Glucose",      detail: "148 mg/dL", time: "Today, 10:00 AM", trend: "up" },
-  { id: 4, type: "blood_check", title: "Blood Disease Check", detail: "Risk Score: 42 / 100", time: "Yesterday, 3:15 PM" },
-  { id: 5, type: "meal",    title: "Lunch Logged",            detail: "Grilled chicken + rice · ~80g carbs", time: "Yesterday, 1:00 PM" },
+  { id: 4, type: "meal",    title: "Lunch Logged",            detail: "Grilled chicken + rice · ~80g carbs", time: "Yesterday, 1:00 PM" },
 ];
 
 const notifications = [
@@ -44,10 +43,10 @@ const statusConfig: Record<ConditionStatus, { bg: string; text: string; border: 
 };
 
 const sidebarNav = [
-  { icon: LayoutDashboard, label: "Dashboard",          path: "/dashboard/patient",              active: true },
-  { icon: Droplets,        label: "Glucose Logs",       path: "/dashboard/patient/glucose",      active: false },
-  { icon: ShieldAlert,     label: "Blood Disease Check",path: "/dashboard/patient/blood-disease",active: false },
-  { icon: Settings,        label: "Settings",           path: "/dashboard/patient/settings",     active: false },
+  { icon: LayoutDashboard, label: "Dashboard",    path: "/dashboard/patient",          active: true },
+  { icon: Droplets,        label: "Glucose Logs", path: "/dashboard/patient/glucose",  active: false },
+  { icon: Utensils,        label: "Meal Logs",    path: "/dashboard/patient/meals",    active: false },
+  { icon: Settings,        label: "Settings",     path: "/dashboard/patient/settings", active: false },
 ];
 
 // ─── Log Glucose Modal ────────────────────────────────────────────────────────
@@ -260,211 +259,12 @@ function LogMealModal({ onClose, onSave }: { onClose: () => void; onSave: (log: 
   );
 }
 
-// ─── Blood Disease Check Modal ────────────────────────────────────────────────
-function BloodCheckModal({ onClose, onSave }: { onClose: () => void; onSave: (log: ActivityLog) => void }) {
-  const [step, setStep] = useState(1);
-  const [answers, setAnswers] = useState({ hb: "", wbc: "", platelets: "", fatigue: "", bruising: "" });
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{ score: number; level: ConditionStatus } | null>(null);
-
-  const update = (k: string, v: string) => setAnswers((a) => ({ ...a, [k]: v }));
-
-  const computeResult = async () => {
-    setLoading(true);
-    await new Promise((r) => setTimeout(r, 1200));
-    // Simple mock scoring
-    let score = 20;
-    const hb = parseFloat(answers.hb);
-    if (hb > 0) { if (hb < 12) score += 25; else if (hb < 13.5) score += 10; }
-    if (answers.fatigue === "yes") score += 20;
-    if (answers.bruising === "yes") score += 15;
-    score = Math.min(score, 100);
-    const level: ConditionStatus = score >= 60 ? "Critical" : score >= 35 ? "Mid" : "Low";
-    setResult({ score, level });
-    setLoading(false);
-  };
-
-  const handleFinish = () => {
-    if (!result) return;
-    onSave({
-      id: Date.now(),
-      type: "blood_check",
-      title: "Blood Disease Check",
-      detail: `Risk Score: ${result.score} / 100 · ${result.level} Risk`,
-      time: "Just now",
-    });
-    onClose();
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-7 z-10">
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center">
-              <ShieldAlert className="w-5 h-5 text-purple-600" strokeWidth={1.8} />
-            </div>
-            <div>
-              <h3 className="text-slate-900" style={{ fontWeight: 700 }}>Blood Disease Check</h3>
-              <p className="text-slate-400 text-xs">Quick screening · 3 questions</p>
-            </div>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 transition-colors">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Progress */}
-        {!result && (
-          <div className="flex gap-1.5 mb-6">
-            {[1, 2, 3].map((s) => (
-              <div key={s} className={`h-1.5 flex-1 rounded-full transition-all ${s <= step ? "bg-purple-500" : "bg-slate-100"}`} />
-            ))}
-          </div>
-        )}
-
-        {!result ? (
-          <div className="space-y-5">
-            {step === 1 && (
-              <>
-                <div>
-                  <label className="block text-sm text-slate-700 mb-2" style={{ fontWeight: 600 }}>
-                    Hemoglobin (Hb) level — g/dL <span className="text-slate-400 font-normal">(if known)</span>
-                  </label>
-                  <input
-                    type="number"
-                    value={answers.hb}
-                    onChange={(e) => update("hb", e.target.value)}
-                    placeholder="e.g. 13.5"
-                    step={0.1}
-                    min={0}
-                    max={20}
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all text-sm"
-                    autoFocus
-                  />
-                  <p className="text-xs text-slate-400 mt-1.5">Normal: ≥12 (women) · ≥13.5 (men) g/dL</p>
-                </div>
-                <div>
-                  <label className="block text-sm text-slate-700 mb-2" style={{ fontWeight: 600 }}>
-                    WBC Count <span className="text-slate-400 font-normal">(×10³/μL, if known)</span>
-                  </label>
-                  <input
-                    type="number"
-                    value={answers.wbc}
-                    onChange={(e) => update("wbc", e.target.value)}
-                    placeholder="e.g. 7.5"
-                    step={0.1}
-                    min={0}
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all text-sm"
-                  />
-                  <p className="text-xs text-slate-400 mt-1.5">Normal range: 4.5 – 11.0 ×10³/μL</p>
-                </div>
-              </>
-            )}
-
-            {step === 2 && (
-              <div>
-                <label className="block text-sm text-slate-700 mb-3" style={{ fontWeight: 600 }}>
-                  Do you experience unusual fatigue or weakness regularly?
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  {["yes", "no"].map((v) => (
-                    <button
-                      key={v}
-                      onClick={() => update("fatigue", v)}
-                      className={`py-3.5 rounded-xl border-2 text-sm font-semibold capitalize transition-all ${answers.fatigue === v ? "border-purple-500 bg-purple-50 text-purple-700" : "border-slate-200 text-slate-600 hover:border-slate-300"}`}
-                    >
-                      {v === "yes" ? "Yes, often" : "No / Rarely"}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {step === 3 && (
-              <div>
-                <label className="block text-sm text-slate-700 mb-3" style={{ fontWeight: 600 }}>
-                  Do you notice unexplained bruising or bleeding?
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  {["yes", "no"].map((v) => (
-                    <button
-                      key={v}
-                      onClick={() => update("bruising", v)}
-                      className={`py-3.5 rounded-xl border-2 text-sm font-semibold capitalize transition-all ${answers.bruising === v ? "border-purple-500 bg-purple-50 text-purple-700" : "border-slate-200 text-slate-600 hover:border-slate-300"}`}
-                    >
-                      {v === "yes" ? "Yes, sometimes" : "No / Rarely"}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="flex gap-3 pt-2">
-              {step > 1 && (
-                <button onClick={() => setStep(step - 1)} className="flex-1 py-3 border border-slate-200 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors">
-                  Back
-                </button>
-              )}
-              {step < 3 ? (
-                <button
-                  onClick={() => setStep(step + 1)}
-                  className="flex-1 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-sm font-semibold transition-colors"
-                >
-                  Next →
-                </button>
-              ) : (
-                <button
-                  onClick={computeResult}
-                  disabled={loading}
-                  className="flex-1 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-300 text-white rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2"
-                >
-                  {loading ? <><Loader2 className="w-4 h-4 animate-spin" />Analysing…</> : "Get Results"}
-                </button>
-              )}
-            </div>
-          </div>
-        ) : (
-          /* Result */
-          <div className="text-center">
-            <div className={`w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center ${result.level === "Critical" ? "bg-red-100" : result.level === "Mid" ? "bg-amber-100" : "bg-emerald-100"}`}>
-              <span className={`text-3xl font-black ${result.level === "Critical" ? "text-red-600" : result.level === "Mid" ? "text-amber-600" : "text-emerald-600"}`}>
-                {result.score}
-              </span>
-            </div>
-            <p className="text-slate-500 text-xs mb-1">Risk Score out of 100</p>
-            <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold mb-4 ${statusConfig[result.level].bg} ${statusConfig[result.level].text} border ${statusConfig[result.level].border}`}>
-              <span className={`w-2 h-2 rounded-full ${statusConfig[result.level].dot}`} />
-              {statusConfig[result.level].label}
-            </div>
-            <p className="text-slate-600 text-sm leading-relaxed mb-6">
-              {result.level === "Critical"
-                ? "Your indicators suggest a potential blood health concern. Please consult your doctor as soon as possible."
-                : result.level === "Mid"
-                ? "Some indicators are slightly outside normal range. Monitor your symptoms and follow up with your doctor."
-                : "Your blood health indicators look within normal ranges. Keep up your healthy habits!"}
-            </p>
-            <button
-              onClick={handleFinish}
-              className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-sm font-semibold transition-colors"
-            >
-              Save & Close
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 // ─── Activity Icon ────────────────────────────────────────────────────────────
 function ActivityIcon({ type }: { type: LogType }) {
   const map: Record<LogType, { icon: React.ElementType; bg: string; color: string }> = {
-    glucose:     { icon: Droplets,    bg: "bg-blue-50",   color: "text-blue-500" },
-    meal:        { icon: Utensils,    bg: "bg-emerald-50",color: "text-emerald-500" },
-    blood_check: { icon: ShieldAlert, bg: "bg-purple-50", color: "text-purple-500" },
-    alert:       { icon: AlertTriangle, bg: "bg-red-50",  color: "text-red-500" },
+    glucose: { icon: Droplets,      bg: "bg-blue-50",   color: "text-blue-500" },
+    meal:    { icon: Utensils,      bg: "bg-emerald-50",color: "text-emerald-500" },
+    alert:   { icon: AlertTriangle, bg: "bg-red-50",    color: "text-red-500" },
   };
   const { icon: Icon, bg, color } = map[type];
   return (
@@ -501,7 +301,6 @@ export default function PatientDashboard() {
   // Latest glucose from activity
   const latestGlucose = activity.find((a) => a.type === "glucose");
   const latestMeal = activity.find((a) => a.type === "meal");
-  const latestBlood = activity.find((a) => a.type === "blood_check");
 
   // Derive condition status from latest glucose
   const conditionStatus: ConditionStatus = latestGlucose
@@ -511,11 +310,6 @@ export default function PatientDashboard() {
       ? "Mid"
       : "Low"
     : "Low";
-
-  // Blood risk score from latest check
-  const bloodRiskScore = latestBlood
-    ? parseInt(latestBlood.detail.match(/\d+/)?.[0] ?? "42")
-    : 42;
 
   return (
     <div className="flex h-screen bg-[#F7F8FC] overflow-hidden">
@@ -634,69 +428,79 @@ export default function PatientDashboard() {
             </div>
 
             {/* ── Summary Cards ─────────────────────────────────────────────── */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {/* Latest Glucose */}
-              <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-11 h-11 bg-blue-50 rounded-xl flex items-center justify-center">
-                    <Droplets className="w-5 h-5 text-blue-500" strokeWidth={1.8} />
-                  </div>
+              <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex items-center gap-4">
+                <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Droplets className="w-6 h-6 text-blue-500" strokeWidth={1.8} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-slate-400 text-xs mb-0.5">Latest Glucose</p>
+                  <p className="text-slate-900" style={{ fontWeight: 800, fontSize: "1.75rem", lineHeight: 1 }}>
+                    {latestGlucose ? latestGlucose.detail.split(" ")[0] : "—"}
+                  </p>
+                  <p className="text-slate-400 text-xs mt-1 truncate">
+                    {latestGlucose ? `mg/dL · ${latestGlucose.time}` : "No reading yet"}
+                  </p>
+                </div>
+                <div className="flex-shrink-0">
                   {latestGlucose?.trend === "up" ? (
-                    <ArrowUpRight className="w-5 h-5 text-red-400" />
+                    <div className="w-8 h-8 bg-red-50 rounded-lg flex items-center justify-center">
+                      <ArrowUpRight className="w-4 h-4 text-red-400" />
+                    </div>
                   ) : latestGlucose?.trend === "down" ? (
-                    <ArrowDownRight className="w-5 h-5 text-blue-400" />
+                    <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center">
+                      <ArrowDownRight className="w-4 h-4 text-blue-400" />
+                    </div>
                   ) : (
-                    <Minus className="w-5 h-5 text-emerald-400" />
+                    <div className="w-8 h-8 bg-emerald-50 rounded-lg flex items-center justify-center">
+                      <Minus className="w-4 h-4 text-emerald-400" />
+                    </div>
                   )}
                 </div>
-                <p className="text-slate-400 text-xs mb-1">Latest Glucose</p>
-                <p className="text-slate-900" style={{ fontWeight: 800, fontSize: "1.9rem", lineHeight: 1 }}>
-                  {latestGlucose ? latestGlucose.detail.split(" ")[0] : "—"}
-                </p>
-                <p className="text-slate-400 text-xs mt-1.5">{latestGlucose ? latestGlucose.detail.split(" ")[1] || "mg/dL" : "mg/dL"}</p>
-                <p className="text-slate-300 text-xs mt-2.5 truncate">{latestGlucose?.time ?? "No reading yet"}</p>
               </div>
 
               {/* Last Meal */}
-              <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-11 h-11 bg-emerald-50 rounded-xl flex items-center justify-center">
-                    <Utensils className="w-5 h-5 text-emerald-500" strokeWidth={1.8} />
-                  </div>
-                  <CheckCircle className="w-5 h-5 text-emerald-400" />
+              <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex items-center gap-4">
+                <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Utensils className="w-6 h-6 text-emerald-500" strokeWidth={1.8} />
                 </div>
-                <p className="text-slate-400 text-xs mb-1">Last Meal</p>
-                <p className="text-slate-900 leading-snug" style={{ fontWeight: 700, fontSize: "1.05rem" }}>
-                  {latestMeal ? latestMeal.title.replace(" Logged", "") : "Not logged"}
-                </p>
-                <p className="text-slate-500 text-xs mt-1.5 line-clamp-1">{latestMeal?.detail ?? "—"}</p>
-                <p className="text-slate-300 text-xs mt-2.5 truncate">{latestMeal?.time ?? "No meal yet"}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-slate-400 text-xs mb-0.5">Last Meal</p>
+                  <p className="text-slate-900 truncate" style={{ fontWeight: 700, fontSize: "1.05rem", lineHeight: 1.2 }}>
+                    {latestMeal ? latestMeal.title.replace(" Logged", "") : "Not logged"}
+                  </p>
+                  <p className="text-slate-400 text-xs mt-1 truncate">
+                    {latestMeal ? latestMeal.detail : "No meal yet"}
+                  </p>
+                </div>
+                <div className="w-8 h-8 bg-emerald-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <CheckCircle className="w-4 h-4 text-emerald-400" />
+                </div>
               </div>
 
               {/* Condition Status */}
-              <div className={`rounded-2xl p-6 border shadow-sm ${statusConfig[conditionStatus].bg} ${statusConfig[conditionStatus].border}`}>
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center bg-white/60`}>
-                    <Activity className={`w-5 h-5 ${statusConfig[conditionStatus].text}`} strokeWidth={1.8} />
-                  </div>
+              <div className={`rounded-2xl p-5 border shadow-sm flex items-center gap-4 ${statusConfig[conditionStatus].bg} ${statusConfig[conditionStatus].border}`}>
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 bg-white/60">
+                  <Activity className={`w-6 h-6 ${statusConfig[conditionStatus].text}`} strokeWidth={1.8} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-xs mb-0.5 ${statusConfig[conditionStatus].text} opacity-70`}>Condition Status</p>
+                  <p className={`${statusConfig[conditionStatus].text}`} style={{ fontWeight: 800, fontSize: "1.3rem", lineHeight: 1 }}>
+                    {statusConfig[conditionStatus].label}
+                  </p>
+                  <p className={`text-xs mt-1 ${statusConfig[conditionStatus].text} opacity-60`}>
+                    Based on recent readings
+                  </p>
+                </div>
+                <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center">
                   <span className={`w-3 h-3 rounded-full ${statusConfig[conditionStatus].dot} animate-pulse`} />
                 </div>
-                <p className={`text-xs mb-1 ${statusConfig[conditionStatus].text} opacity-70`}>Condition Status</p>
-                <p className={`${statusConfig[conditionStatus].text}`} style={{ fontWeight: 800, fontSize: "1.4rem", lineHeight: 1.1 }}>
-                  {statusConfig[conditionStatus].label}
-                </p>
-                <p className={`text-xs mt-1.5 ${statusConfig[conditionStatus].text} opacity-60`}>
-                  Based on recent readings
-                </p>
-                <p className="text-slate-400 text-xs mt-2.5">Updated today</p>
               </div>
-
-              {/* Recent Activity */}
-              
             </div>
 
             {/* ── Quick Actions ─────────────────────────────────────────────── */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => setModal("glucose")}
                 className="group flex flex-col items-center gap-3 bg-white hover:bg-blue-600 border border-slate-100 hover:border-blue-600 rounded-2xl p-5 shadow-sm transition-all duration-200 hover:shadow-lg hover:shadow-blue-200 hover:-translate-y-0.5"
@@ -715,16 +519,6 @@ export default function PatientDashboard() {
                   <Utensils className="w-6 h-6 text-emerald-500 group-hover:text-white transition-colors" strokeWidth={1.8} />
                 </div>
                 <span className="text-slate-700 group-hover:text-white text-sm transition-colors" style={{ fontWeight: 600 }}>Log Meal</span>
-              </button>
-
-              <button
-                onClick={() => navigate("/dashboard/patient/blood-disease")}
-                className="group flex flex-col items-center gap-3 bg-white hover:bg-purple-600 border border-slate-100 hover:border-purple-600 rounded-2xl p-5 shadow-sm transition-all duration-200 hover:shadow-lg hover:shadow-purple-200 hover:-translate-y-0.5"
-              >
-                <div className="w-12 h-12 bg-purple-50 group-hover:bg-white/20 rounded-2xl flex items-center justify-center transition-colors">
-                  <ShieldAlert className="w-6 h-6 text-purple-500 group-hover:text-white transition-colors" strokeWidth={1.8} />
-                </div>
-                <span className="text-slate-700 group-hover:text-white text-sm transition-colors" style={{ fontWeight: 600 }}>Blood Disease Check</span>
               </button>
             </div>
 

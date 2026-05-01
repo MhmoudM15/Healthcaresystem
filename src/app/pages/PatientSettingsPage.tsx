@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router";
 import {
-  Activity, LayoutDashboard, Droplets, ShieldAlert,
+  Activity, LayoutDashboard, Droplets,
   LineChart, Bell, Settings, LogOut, Menu, X, Calendar,
   User, Heart, Save, AlertCircle, CheckCircle, Loader2,
   Download, ArrowLeft, Stethoscope, Utensils,
@@ -30,15 +30,14 @@ interface NotificationSettings {
   emailAlerts: boolean;
   inAppAlerts: boolean;
   glucoseAlerts: boolean;
-  bloodDiseaseAlerts: boolean;
   doctorMessages: boolean;
 }
 
 const sidebarNav = [
-  { icon: LayoutDashboard, label: "Dashboard",          path: "/dashboard/patient",              active: false },
-  { icon: Droplets,        label: "Glucose Logs",       path: "/dashboard/patient/glucose",      active: false },
-  { icon: ShieldAlert,     label: "Blood Disease Check",path: "/dashboard/patient/blood-disease",active: false },
-  { icon: Settings,        label: "Settings",           path: "/dashboard/patient/settings",     active: true },
+  { icon: LayoutDashboard, label: "Dashboard",    path: "/dashboard/patient",          active: false },
+  { icon: Droplets,        label: "Glucose Logs", path: "/dashboard/patient/glucose",  active: false },
+  { icon: Utensils,        label: "Meal Logs",    path: "/dashboard/patient/meals",    active: false },
+  { icon: Settings,        label: "Settings",     path: "/dashboard/patient/settings", active: true },
 ];
 
 const dietaryOptions = [
@@ -130,7 +129,6 @@ export default function PatientSettingsPage() {
     emailAlerts: true,
     inAppAlerts: true,
     glucoseAlerts: true,
-    bloodDiseaseAlerts: true,
     doctorMessages: true,
   });
 
@@ -399,7 +397,7 @@ export default function PatientSettingsPage() {
               </div>
             </div>
 
-            {/* ── Section 2: Health Preferences ──────────────────────────── */}
+            {/* ── Section 2: Health Preferences ─────────────────────────── */}
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
               <div className="flex items-center gap-3 mb-5 pb-4 border-b border-slate-100">
                 <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center">
@@ -518,12 +516,6 @@ export default function PatientSettingsPage() {
                   onChange={(v) => updateNotification("glucoseAlerts", v)}
                   label="Glucose Level Alerts"
                   description="Alert when glucose is outside target range"
-                />
-                <ToggleSwitch
-                  checked={notifications.bloodDiseaseAlerts}
-                  onChange={(v) => updateNotification("bloodDiseaseAlerts", v)}
-                  label="Blood Disease Risk Alerts"
-                  description="Notify on high-risk blood disease screenings"
                 />
                 <ToggleSwitch
                   checked={notifications.doctorMessages}

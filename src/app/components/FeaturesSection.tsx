@@ -10,14 +10,6 @@ const features = [
     tags: ["Blood Sugar", "HbA1c", "Daily Logs"],
   },
   {
-    icon: Droplets,
-    color: "red",
-    title: "Blood Disease Detection",
-    description:
-      "Our AI scans your biomarkers to flag early indicators of anaemia, cholesterol imbalances, and other blood conditions — before they become serious.",
-    tags: ["Anaemia", "Cholesterol", "Biomarkers"],
-  },
-  {
     icon: Brain,
     color: "teal",
     title: "AI-Powered Advice",
@@ -40,6 +32,14 @@ const features = [
     description:
       "Visualize your health journey with interactive charts and weekly/monthly trend reports. Celebrate milestones and identify patterns at a glance.",
     tags: ["Trends", "Reports", "Milestones"],
+  },
+  {
+    icon: Droplets,
+    color: "blue",
+    title: "Glucose Logging",
+    description:
+      "Log fasting, post-meal, and bedtime readings effortlessly. DiaCheck automatically correlates your glucose data with meals to surface actionable patterns.",
+    tags: ["Fasting", "Post-Meal", "Correlation"],
   },
   {
     icon: Lock,

@@ -5,7 +5,7 @@ import {
   Tooltip, ReferenceLine, ReferenceArea, Dot,
 } from "recharts";
 import {
-  Activity, LayoutDashboard, Droplets, Utensils, ShieldAlert,
+  Activity, LayoutDashboard, Droplets, Utensils,
   LineChart as LineChartIcon, Bell, Settings, LogOut, Menu, X,
   AlertTriangle, CheckCircle, Brain, Share2, FileText, RotateCcw,
   ArrowLeft, ArrowUpRight, ArrowDownRight, Minus, Siren, Heart,
@@ -70,10 +70,10 @@ const statusConfig: Record<ConditionStatus, {
 };
 
 const sidebarNav = [
-  { icon: LayoutDashboard, label: "Dashboard",          path: "/dashboard/patient" },
-  { icon: Droplets,        label: "Glucose Logs",       path: "/dashboard/patient/glucose" },
-  { icon: ShieldAlert,     label: "Blood Disease Check",path: "/dashboard/patient/blood-disease" },
-  { icon: Settings,        label: "Settings",           path: "/dashboard/patient/settings" },
+  { icon: LayoutDashboard, label: "Dashboard",    path: "/dashboard/patient" },
+  { icon: Droplets,        label: "Glucose Logs", path: "/dashboard/patient/glucose" },
+  { icon: Utensils,        label: "Meal Logs",    path: "/dashboard/patient/meals" },
+  { icon: Settings,        label: "Settings",     path: "/dashboard/patient/settings" },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
