@@ -9,7 +9,8 @@ import {
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface FormData {
   age: string;
-  bmi: string;
+  height: string;   // cm
+  weight: string;   // kg
   fastingGlucose: string;
   familyHistory: string;
   activityLevel: string;
@@ -35,13 +36,11 @@ const steps = [
     id: 2,
     icon: Scale,
     color: "indigo",
-    question: "What is your BMI?",
-    description: "Body Mass Index helps assess weight-related health risks.",
-    field: "bmi" as keyof FormData,
-    type: "number" as const,
-    placeholder: "e.g. 24.5",
-    unit: "kg/m²",
-    hint: "Normal: 18.5–24.9 · Overweight: ≥25 · Obese: ≥30",
+    question: "What are your height and weight?",
+    description: "We'll calculate your BMI automatically to assess weight-related health risks.",
+    field: "height" as keyof FormData,
+    type: "body-metrics" as const,
+    hint: "BMI is calculated from your height and weight",
   },
   {
     id: 3,
@@ -88,7 +87,8 @@ const steps = [
 function calculateRisk(data: FormData): { isAtRisk: boolean; score: number; maxScore: number } {
   let score = 0;
   const age = parseInt(data.age);
-  const bmi = parseFloat(data.bmi);
+  const heightM = parseFloat(data.height) / 100;
+  const bmi = parseFloat(data.weight) / (heightM * heightM);
   const glucose = parseInt(data.fastingGlucose);
 
   if (age >= 45) score += 2;
@@ -121,7 +121,7 @@ export default function DiabetesTestPage() {
   const [pageState, setPageState] = useState<PageState>("test");
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<FormData>({
-    age: "", bmi: "", fastingGlucose: "", familyHistory: "", activityLevel: "",
+    age: "", height: "", weight: "", fastingGlucose: "", familyHistory: "", activityLevel: "",
   });
   const [riskResult, setRiskResult] = useState<{ score: number; maxScore: number } | null>(null);
 
@@ -132,7 +132,11 @@ export default function DiabetesTestPage() {
   const colors = colorMap[step.color];
 
   const isValid =
-    step.type === "select"
+    step.type === "body-metrics"
+      ? formData.height !== "" && formData.weight !== "" &&
+        !isNaN(Number(formData.height)) && Number(formData.height) > 0 &&
+        !isNaN(Number(formData.weight)) && Number(formData.weight) > 0
+      : step.type === "select"
       ? currentValue !== ""
       : currentValue !== "" && !isNaN(Number(currentValue)) && Number(currentValue) > 0;
 
@@ -153,7 +157,7 @@ export default function DiabetesTestPage() {
 
   const handleRetake = () => {
     setCurrentStep(0);
-    setFormData({ age: "", bmi: "", fastingGlucose: "", familyHistory: "", activityLevel: "" });
+    setFormData({ age: "", height: "", weight: "", fastingGlucose: "", familyHistory: "", activityLevel: "" });
     setRiskResult(null);
     setPageState("test");
   };
@@ -288,6 +292,56 @@ export default function DiabetesTestPage() {
                       />
                       <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium">
                         {step.unit}
+                      </span>
+                    </div>
+                    {step.hint && (
+                      <div className="flex items-start gap-2 mt-3 text-xs text-slate-400">
+                        <Info className="w-3.5 h-3.5 mt-0.5 text-blue-400 flex-shrink-0" />
+                        <span>{step.hint}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Body Metrics Input */}
+                {step.type === "body-metrics" && (
+                  <div className="space-y-3 mb-6">
+                    <div className="relative">
+                      <input
+                        type="number"
+                        value={formData.height}
+                        onChange={(e) => setFormData((d) => ({ ...d, height: e.target.value }))}
+                        onKeyDown={handleKeyDown}
+                        placeholder="Height (cm)"
+                        autoFocus
+                        className={`w-full px-5 py-4 pr-24 border-2 rounded-2xl text-slate-900 placeholder-slate-300 focus:outline-none transition-all text-lg ${
+                          formData.height
+                            ? `${colors.border} ring-4 ${colors.ring} focus:${colors.border}`
+                            : "border-slate-200 focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
+                        }`}
+                        style={{ fontWeight: 600 }}
+                      />
+                      <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium">
+                        cm
+                      </span>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        value={formData.weight}
+                        onChange={(e) => setFormData((d) => ({ ...d, weight: e.target.value }))}
+                        onKeyDown={handleKeyDown}
+                        placeholder="Weight (kg)"
+                        autoFocus
+                        className={`w-full px-5 py-4 pr-24 border-2 rounded-2xl text-slate-900 placeholder-slate-300 focus:outline-none transition-all text-lg ${
+                          formData.weight
+                            ? `${colors.border} ring-4 ${colors.ring} focus:${colors.border}`
+                            : "border-slate-200 focus:border-blue-400 focus:ring-4 focus:ring-blue-50"
+                        }`}
+                        style={{ fontWeight: 600 }}
+                      />
+                      <span className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-medium">
+                        kg
                       </span>
                     </div>
                     {step.hint && (
