@@ -10,9 +10,7 @@ import { useAuth } from "../context/AuthContext";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type MealType   = "breakfast" | "lunch" | "dinner" | "snack";
-type MealRisk   = "High" | "Moderate" | "Low";
 type ScanStage  = "idle" | "preview" | "scanning" | "detected";
-type Phase      = "logging" | "ai-analyzing";
 
 interface DetectedFood {
   name: string;
@@ -30,17 +28,6 @@ interface MealEntry {
   time: string;
   date: string;
   imageUrl: string;
-}
-
-interface MealAIResult {
-  carbRisk: MealRisk;
-  riskScore: number;
-  totalCarbs: number;
-  avgCarbsPerMeal: number;
-  mealCount: number;
-  highCarbMeals: number;
-  narrative: string[];
-  recommendations: { icon: string; text: string }[];
 }
 
 // ─── Mock AI detection library ────────────────────────────────────────────────
@@ -171,81 +158,6 @@ const SAMPLE_MEALS: MealEntry[] = [
     imageUrl: "https://images.unsplash.com/photo-1621996346565-e3dbc353d2e5?w=400&q=80",
   },
 ];
-
-// ─── AI Analysis generator ────────────────────────────────────────────────────
-function generateMealAI(entries: MealEntry[]): MealAIResult {
-  const totalCarbs     = entries.reduce((s, m) => s + m.carbEstimate, 0);
-  const avgCarbsPerMeal = entries.length ? Math.round(totalCarbs / entries.length) : 0;
-  const highCarbMeals  = entries.filter((m) => m.carbEstimate > 60).length;
-  const mealCount      = entries.length;
-
-  let carbRisk: MealRisk;
-  let riskScore: number;
-  if (totalCarbs > 300 || highCarbMeals >= 3) {
-    carbRisk = "High";     riskScore = Math.min(92, 65 + highCarbMeals * 7);
-  } else if (totalCarbs > 175 || highCarbMeals >= 1 || avgCarbsPerMeal > 55) {
-    carbRisk = "Moderate"; riskScore = Math.min(60, 38 + (totalCarbs - 100) * 0.08);
-  } else {
-    carbRisk = "Low";      riskScore = Math.max(10, 15 + (totalCarbs > 50 ? 12 : 0));
-  }
-
-  const narrative: string[] = [];
-  if (entries.length === 0) {
-    narrative.push("No meals logged yet. Capture a photo of your meal to start getting AI dietary insights.");
-  } else {
-    narrative.push(
-      totalCarbs > 300
-        ? `Your total carbohydrate intake of ${totalCarbs}g significantly exceeds the recommended daily limit for diabetes management (≤150g). This level is likely to cause persistent hyperglycemia.`
-        : totalCarbs > 175
-        ? `Your total carbohydrate intake of ${totalCarbs}g is moderately elevated. Replacing refined grains with vegetables and lean protein will help lower post-meal glucose spikes.`
-        : `Your total carbohydrate intake of ${totalCarbs}g is within a manageable range. Continue focusing on complex carbs and balanced meals.`
-    );
-    if (highCarbMeals > 0) {
-      narrative.push(
-        highCarbMeals >= 3
-          ? `${highCarbMeals} meals exceeded 60g of carbohydrates. High-carb meals cause rapid glucose spikes — consider splitting large meals into smaller, more frequent ones.`
-          : `You had ${highCarbMeals} meal${highCarbMeals > 1 ? "s" : ""} with over 60g of carbs. Pairing high-carb meals with protein and healthy fats can slow glucose absorption.`
-      );
-    }
-    const mealTypes = entries.map((m) => m.mealType);
-    if (!mealTypes.includes("breakfast")) {
-      narrative.push("No breakfast was logged. Skipping breakfast can lead to reactive hypoglycemia and increase overeating risk at lunch.");
-    } else {
-      narrative.push("Good meal frequency detected. Consistent meal timing helps maintain stable blood glucose throughout the day.");
-    }
-  }
-
-  const recommendations: { icon: string; text: string }[] = [];
-  if (carbRisk === "High") {
-    recommendations.push(
-      { icon: "🥦", text: "Replace half your plate with non-starchy vegetables: broccoli, spinach, zucchini." },
-      { icon: "🍳", text: "Increase protein at every meal — eggs, chicken, fish, or legumes slow glucose absorption." },
-      { icon: "🚫", text: "Eliminate sugary drinks, juices, white bread, and processed snacks for one week." },
-      { icon: "🏥", text: "Share your meal photo log with your doctor for a personalised dietary plan." },
-    );
-  } else if (carbRisk === "Moderate") {
-    recommendations.push(
-      { icon: "🌾", text: "Swap white rice and bread for brown rice, whole-wheat bread, or quinoa." },
-      { icon: "⏰", text: "Eat smaller meals every 3–4 hours instead of 2–3 large ones to flatten glucose curves." },
-      { icon: "🚶", text: "A 15–20 minute walk after your largest meal significantly reduces post-meal spikes." },
-    );
-  } else {
-    recommendations.push(
-      { icon: "✅", text: "Your carbohydrate intake looks well-controlled. Continue balancing complex carbs with protein." },
-      { icon: "💧", text: "Keep drinking 8+ glasses of water daily to support glucose excretion." },
-      { icon: "📊", text: "Log meals for 2 weeks to give your doctor a complete picture of your dietary patterns." },
-    );
-  }
-  recommendations.push({ icon: "🥗", text: "Aim for the plate method: ½ non-starchy vegetables, ¼ lean protein, ¼ complex carbs." });
-
-  return { carbRisk, riskScore, totalCarbs, avgCarbsPerMeal, mealCount, highCarbMeals, narrative, recommendations };
-}
-
-const riskConfig = {
-  High:     { grad: "from-red-600 to-rose-600",     label: "High Carb Risk",     dot: "bg-red-500",    text: "text-red-700",     bg: "bg-red-50",     border: "border-red-200" },
-  Moderate: { grad: "from-amber-500 to-orange-500", label: "Moderate Carb Risk", dot: "bg-amber-500",  text: "text-amber-700",   bg: "bg-amber-50",   border: "border-amber-200" },
-  Low:      { grad: "from-emerald-500 to-teal-500", label: "Low Carb Risk",      dot: "bg-emerald-500",text: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-200" },
-};
 
 // ─── Camera Modal ─────────────────────────────────────────────────────────────
 function CameraModal({ onCapture, onClose }: { onCapture: (dataUrl: string) => void; onClose: () => void }) {
@@ -421,10 +333,8 @@ export default function MealLogsPage() {
   const [showCamera,   setShowCamera]   = useState(false);
   const [isDragging,   setIsDragging]   = useState(false);
 
-  // ── History & AI
+  // ── History
   const [mealEntries,  setMealEntries]  = useState<MealEntry[]>(SAMPLE_MEALS);
-  const [phase,        setPhase]        = useState<Phase>("logging");
-  const [aiResult,     setAiResult]     = useState<MealAIResult | null>(null);
 
   const uploadRef = useRef<HTMLInputElement>(null);
   const cameraFileRef = useRef<HTMLInputElement>(null);
@@ -519,16 +429,6 @@ export default function MealLogsPage() {
   // ─── Remove a meal from history
   const removeMeal = (id: string) => setMealEntries((p) => p.filter((m) => m.id !== id));
 
-  // ─── AI analysis of history
-  const handleAnalyze = async () => {
-    if (mealEntries.length === 0) return;
-    setPhase("ai-analyzing");
-    await new Promise((r) => setTimeout(r, 2200));
-    setAiResult(generateMealAI(mealEntries));
-    setPhase("logging");
-    setTimeout(() => document.getElementById("meal-ai-result")?.scrollIntoView({ behavior: "smooth" }), 100);
-  };
-
   // ─── Sidebar ──────────────────────────────────────────────────────────────
   const Sidebar = () => (
     <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-60 bg-white border-r border-slate-100 flex flex-col transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}>
@@ -574,28 +474,6 @@ export default function MealLogsPage() {
       </div>
     </aside>
   );
-
-  // ─── AI-Analyzing overlay ─────────────────────────────────────────────────
-  if (phase === "ai-analyzing") {
-    return (
-      <div className="flex h-screen bg-[#F7F8FC] overflow-hidden">
-        <Sidebar />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-emerald-200 animate-pulse">
-              <Brain className="w-9 h-9 text-white" strokeWidth={1.8} />
-            </div>
-            <h2 className="text-slate-900 mb-2" style={{ fontWeight: 800, fontSize: "1.4rem" }}>Analysing meal history…</h2>
-            <p className="text-slate-500 text-sm mb-8 max-w-xs mx-auto">Our AI is reviewing your {mealEntries.length} logged meals to generate personalised dietary insights.</p>
-            <div className="flex items-center justify-center gap-2">
-              <Loader2 className="w-5 h-5 text-emerald-600 animate-spin" />
-              <span className="text-emerald-600 text-sm font-semibold">Processing {mealEntries.length} meal{mealEntries.length !== 1 ? "s" : ""}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   const totalCarbsToday = mealEntries.filter(m => m.date === todayStr).reduce((s, m) => s + m.carbEstimate, 0);
 
@@ -848,30 +726,6 @@ export default function MealLogsPage() {
                   </div>
                 </div>
 
-                {/* ── AI Analysis CTA ── */}
-                <div className="bg-gradient-to-br from-emerald-600 to-teal-600 rounded-2xl p-5 shadow-lg shadow-emerald-200">
-                  <div className="flex items-start gap-3 mb-4">
-                    <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                      <Brain className="w-5 h-5 text-white" strokeWidth={1.8} />
-                    </div>
-                    <div>
-                      <p className="text-white text-sm" style={{ fontWeight: 700 }}>AI Dietary Analysis</p>
-                      <p className="text-emerald-100 text-xs mt-0.5">
-                        {mealEntries.length} meal{mealEntries.length !== 1 ? "s" : ""} · {mealEntries.reduce((s, m) => s + m.carbEstimate, 0)}g total carbs ready
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={handleAnalyze}
-                    disabled={mealEntries.length === 0}
-                    className="w-full py-3 bg-white hover:bg-emerald-50 disabled:bg-white/40 text-emerald-700 disabled:text-emerald-300 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2 shadow-sm"
-                  >
-                    <Brain className="w-4 h-4" />Analyse All Meals with AI
-                  </button>
-                  {mealEntries.length === 0 && (
-                    <p className="text-emerald-300 text-xs text-center mt-2">Log at least one meal to analyse</p>
-                  )}
-                </div>
               </div>
 
               {/* ── Right: Meal history (2 cols) ── */}
@@ -963,103 +817,6 @@ export default function MealLogsPage() {
               </div>
             </div>
 
-            {/* ── AI Results Panel ── */}
-            {aiResult && (
-              <div id="meal-ai-result" className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                <div className={`bg-gradient-to-r ${riskConfig[aiResult.carbRisk].grad} px-6 py-5`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center">
-                        <Brain className="w-6 h-6 text-white" strokeWidth={1.8} />
-                      </div>
-                      <div>
-                        <p className="text-white/80 text-xs mb-0.5">AI Meal Analysis Result</p>
-                        <h3 className="text-white" style={{ fontWeight: 800, fontSize: "1.2rem" }}>{riskConfig[aiResult.carbRisk].label}</h3>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-white" style={{ fontWeight: 800, fontSize: "2.2rem", lineHeight: 1 }}>{aiResult.riskScore}</p>
-                      <p className="text-white/70 text-xs">/ 100 risk score</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-6 space-y-5">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    {[
-                      { label: "Total Carbs",     value: `${aiResult.totalCarbs}`,     unit: "grams",   color: "text-emerald-600", bg: "bg-emerald-50" },
-                      { label: "Avg / Meal",      value: `${aiResult.avgCarbsPerMeal}`, unit: "g carbs", color: "text-blue-600",    bg: "bg-blue-50" },
-                      { label: "Meals Logged",    value: `${aiResult.mealCount}`,      unit: "entries", color: "text-slate-700",   bg: "bg-slate-50" },
-                      { label: "High-Carb Meals", value: `${aiResult.highCarbMeals}`,  unit: ">60g",    color: "text-amber-600",   bg: "bg-amber-50" },
-                    ].map((s) => (
-                      <div key={s.label} className={`${s.bg} rounded-xl p-3.5 text-center`}>
-                        <p className="text-slate-500 text-xs mb-1">{s.label}</p>
-                        <p className={`${s.color} text-xl`} style={{ fontWeight: 800, lineHeight: 1 }}>{s.value}</p>
-                        <p className="text-slate-400 text-xs mt-0.5">{s.unit}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div>
-                    <h4 className="text-slate-900 text-sm mb-3" style={{ fontWeight: 700 }}>AI Dietary Insights</h4>
-                    <div className="space-y-2.5">
-                      {aiResult.narrative.map((text, i) => (
-                        <div key={i} className="flex items-start gap-3 bg-slate-50 rounded-xl p-3.5 border border-slate-100">
-                          <div className="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <span className="text-emerald-600 text-[10px]" style={{ fontWeight: 700 }}>{i + 1}</span>
-                          </div>
-                          <p className="text-slate-600 text-sm leading-relaxed">{text}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="text-slate-900 text-sm mb-3" style={{ fontWeight: 700 }}>Dietary Recommendations</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      {aiResult.recommendations.map((rec, i) => (
-                        <div key={i} className="flex items-start gap-3 bg-slate-50 border border-slate-100 rounded-xl p-3.5">
-                          <span className="text-xl flex-shrink-0">{rec.icon}</span>
-                          <p className="text-slate-600 text-xs leading-relaxed">{rec.text}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Carb distribution */}
-                  <div>
-                    <h4 className="text-slate-900 text-sm mb-3" style={{ fontWeight: 700 }}>Carb Distribution by Meal</h4>
-                    <div className="space-y-3">
-                      {mealEntries.slice(0, 6).map((entry) => {
-                        const pct = aiResult.totalCarbs > 0 ? Math.round((entry.carbEstimate / aiResult.totalCarbs) * 100) : 0;
-                        const isHigh = entry.carbEstimate > 60;
-                        return (
-                          <div key={entry.id} className="flex items-center gap-3">
-                            <img src={entry.imageUrl} alt="" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="text-slate-700 text-xs" style={{ fontWeight: 600 }}>{entry.label}</span>
-                                <span className={`text-xs font-semibold ${isHigh ? "text-amber-600" : "text-emerald-600"}`}>{entry.carbEstimate}g ({pct}%)</span>
-                              </div>
-                              <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                                <div className={`h-full rounded-full transition-all ${isHigh ? "bg-amber-400" : "bg-emerald-400"}`} style={{ width: `${Math.min(pct * 2, 100)}%` }} />
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-                    <p className="text-slate-400 text-xs">Based on {mealEntries.length} meals · Generated just now</p>
-                    <button onClick={handleAnalyze} className="flex items-center gap-1.5 text-xs text-emerald-600 font-semibold hover:text-emerald-700 transition-colors">
-                      <Brain className="w-3.5 h-3.5" />Re-analyse
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </main>
       </div>
