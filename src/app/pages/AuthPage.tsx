@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router";
-import { Activity, Eye, EyeOff, ArrowLeft, AlertCircle, Loader2, User, Stethoscope } from "lucide-react";
+import { Activity, Eye, EyeOff, ArrowLeft, AlertCircle, Loader2, User, Stethoscope, CheckCircle, ArrowRight } from "lucide-react";
 import { useAuth, UserRole } from "../context/AuthContext";
 
 const AUTH_IMG = "https://images.unsplash.com/photo-1738168504624-c473a1b8240a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtZWRpY2FsJTIwaGVhbHRoJTIwbW9uaXRvcmluZyUyMGRpZ2l0YWwlMjBpbnRlcmZhY2V8ZW58MXx8fHwxNzc3NTcwNDU4fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral";
@@ -9,6 +9,7 @@ const AUTH_IMG = "https://images.unsplash.com/photo-1738168504624-c473a1b8240a?c
 function SignInForm({ onSwitch }: { onSwitch: () => void }) {
   const { signIn } = useAuth();
   const navigate = useNavigate();
+  const [role, setRole] = useState<UserRole>("patient");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
@@ -42,18 +43,51 @@ function SignInForm({ onSwitch }: { onSwitch: () => void }) {
   return (
     <div className="w-full">
       <h2 className="text-slate-900 mb-1" style={{ fontWeight: 800, fontSize: "1.75rem" }}>Welcome back</h2>
-      <p className="text-slate-500 text-sm mb-8">Sign in to your DiaCheck account</p>
+      <p className="text-slate-500 text-sm mb-6">Sign in to your DiaCheck account</p>
 
-      {/* Demo hint */}
-      
+      {/* Role selector */}
+      <div className="mb-6">
+        <label className="block text-sm text-slate-700 mb-2" style={{ fontWeight: 600 }}>I am signing in as…</label>
+        <div className="grid grid-cols-2 gap-3">
+          {([
+            { value: "patient", icon: User,        label: "Patient",  desc: "Access my health data" },
+            { value: "doctor",  icon: Stethoscope, label: "Doctor",   desc: "Manage my patients"    },
+          ] as const).map(({ value, icon: Icon, label, desc }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setRole(value)}
+              className={`flex flex-col items-start p-3.5 rounded-xl border-2 transition-all text-left ${role === value ? "border-blue-500 bg-blue-50" : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"}`}
+            >
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 transition-colors ${role === value ? "bg-blue-500" : "bg-slate-100"}`}>
+                <Icon className={`w-4 h-4 ${role === value ? "text-white" : "text-slate-500"}`} strokeWidth={1.8} />
+              </div>
+              <span className={`text-sm ${role === value ? "text-blue-700" : "text-slate-700"}`} style={{ fontWeight: 600 }}>{label}</span>
+              <span className="text-xs text-slate-400 mt-0.5">{desc}</span>
+            </button>
+          ))}
+        </div>
 
-      {/* Social Login */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
-        
-        
+        {/* Demo hint per role */}
+        <div className={`mt-3 px-3.5 py-2.5 rounded-xl border text-xs flex items-start gap-2 transition-all ${role === "doctor" ? "bg-teal-50 border-teal-100 text-teal-700" : "bg-blue-50 border-blue-100 text-blue-700"}`}>
+          <span className="mt-0.5 flex-shrink-0">{role === "doctor" ? "🩺" : "👤"}</span>
+          <span>
+            Demo {role === "doctor" ? "doctor" : "patient"} —{" "}
+            <button
+              type="button"
+              className="underline font-semibold hover:opacity-80 transition-opacity"
+              onClick={() => {
+                setEmail(role === "doctor" ? "doctor@demo.com" : "patient@demo.com");
+                setPassword("demo123");
+              }}
+            >
+              Click to autofill
+            </button>
+            {" "}or use{" "}
+            <strong>{role === "doctor" ? "doctor@demo.com" : "patient@demo.com"}</strong> / <strong>demo123</strong>
+          </span>
+        </div>
       </div>
-
-      
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
@@ -123,6 +157,81 @@ function SignInForm({ onSwitch }: { onSwitch: () => void }) {
   );
 }
 
+// ─── Registration Success Popup ────────────────────────────────────────────────
+function RegistrationSuccessPopup({
+  name,
+  role,
+  onContinue,
+}: {
+  name: string;
+  role: UserRole;
+  onContinue: () => void;
+}) {
+  const firstName = name.split(" ")[0];
+  const isDoctor = role === "doctor";
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
+      <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden z-10">
+        {/* Top gradient bar */}
+        <div className={`h-1.5 w-full ${isDoctor ? "bg-gradient-to-r from-teal-400 to-teal-600" : "bg-gradient-to-r from-blue-400 to-blue-600"}`} />
+
+        <div className="px-8 py-8 flex flex-col items-center text-center">
+          {/* Animated checkmark */}
+          <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-5 ${isDoctor ? "bg-teal-50" : "bg-blue-50"}`}>
+            <div className={`w-14 h-14 rounded-full flex items-center justify-center ${isDoctor ? "bg-teal-100" : "bg-blue-100"}`}>
+              <CheckCircle className={`w-8 h-8 ${isDoctor ? "text-teal-600" : "text-blue-600"}`} strokeWidth={2} />
+            </div>
+          </div>
+
+          {/* Heading */}
+          <h2 className="text-slate-900 mb-1.5" style={{ fontWeight: 800, fontSize: "1.4rem" }}>
+            Account Created! 🎉
+          </h2>
+          <p className="text-slate-500 text-sm leading-relaxed mb-2">
+            Welcome to DiaCheck, <span className="text-slate-800" style={{ fontWeight: 600 }}>{firstName}</span>!
+          </p>
+
+          {/* Role badge */}
+          <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs mb-6 ${isDoctor ? "bg-teal-50 text-teal-700 border border-teal-100" : "bg-blue-50 text-blue-700 border border-blue-100"}`} style={{ fontWeight: 600 }}>
+            {isDoctor
+              ? <><Stethoscope className="w-3.5 h-3.5" /> Doctor Account</>
+              : <><User className="w-3.5 h-3.5" /> Patient Account</>}
+          </div>
+
+          {/* Details */}
+          <div className="w-full bg-slate-50 rounded-2xl p-4 mb-6 text-left space-y-2.5">
+            {[
+              isDoctor
+                ? { icon: "📋", text: "Your doctor dashboard is ready with patient management tools" }
+                : { icon: "📊", text: "Your personal health dashboard is set up and ready to use" },
+              isDoctor
+                ? { icon: "🔔", text: "You'll receive alerts when patients need attention" }
+                : { icon: "💉", text: "Start logging your glucose readings and meals right away" },
+            ].map(({ icon, text }) => (
+              <div key={text} className="flex items-start gap-2.5">
+                <span className="text-base mt-0.5 flex-shrink-0">{icon}</span>
+                <p className="text-slate-600 text-xs leading-relaxed">{text}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* CTA */}
+          <button
+            onClick={onContinue}
+            className={`w-full py-3.5 text-white rounded-xl text-sm flex items-center justify-center gap-2 transition-all shadow-md ${isDoctor ? "bg-teal-600 hover:bg-teal-700 shadow-teal-200" : "bg-blue-600 hover:bg-blue-700 shadow-blue-200"}`}
+            style={{ fontWeight: 600 }}
+          >
+            Sign In to your account
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Register Form ─────────────────────────────────────────────────────────────
 function RegisterForm({ onSwitch }: { onSwitch: () => void }) {
   const { register } = useAuth();
@@ -132,6 +241,7 @@ function RegisterForm({ onSwitch }: { onSwitch: () => void }) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [successData, setSuccessData] = useState<{ name: string; role: UserRole; dest: string } | null>(null);
 
   const update = (field: string, val: string) => setForm((f) => ({ ...f, [field]: val }));
 
@@ -154,148 +264,156 @@ function RegisterForm({ onSwitch }: { onSwitch: () => void }) {
     const result = await register({ name: form.name, email: form.email, password: form.password, dob: form.dob, role: form.role });
     setLoading(false);
     if (!result.success) { setError(result.error || "Registration failed."); return; }
-    navigate(result.role === "doctor" ? "/dashboard/doctor" : "/dashboard/patient");
+    const dest = result.role === "doctor" ? "/dashboard/doctor" : "/dashboard/patient";
+    setSuccessData({ name: form.name, role: result.role!, dest });
   };
 
   const handleSocial = () => navigate("/dashboard/patient");
 
   return (
-    <div className="w-full">
-      <h2 className="text-slate-900 mb-1" style={{ fontWeight: 800, fontSize: "1.75rem" }}>Create your account</h2>
-      <p className="text-slate-500 text-sm mb-8">Join DiaCheck and take control of your health</p>
+    <>
+      {successData && (
+        <RegistrationSuccessPopup
+          name={successData.name}
+          role={successData.role}
+          onContinue={() => navigate("/auth?tab=signin")}
+        />
+      )}
+      <div className="w-full">
+        <h2 className="text-slate-900 mb-1" style={{ fontWeight: 800, fontSize: "1.75rem" }}>Create your account</h2>
+        <p className="text-slate-500 text-sm mb-8">Join DiaCheck and take control of your health</p>
 
-      {/* Social */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
-        
-        
-      </div>
+        {/* Social */}
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          
+          
+        </div>
 
-      
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="flex items-start gap-2.5 bg-red-50 border border-red-100 text-red-700 rounded-xl px-4 py-3 text-sm">
+              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              {error}
+            </div>
+          )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {error && (
-          <div className="flex items-start gap-2.5 bg-red-50 border border-red-100 text-red-700 rounded-xl px-4 py-3 text-sm">
-            <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-            {error}
+          {/* Role selector */}
+          <div>
+            <label className="block text-sm text-slate-700 mb-2" style={{ fontWeight: 600 }}>I am a…</label>
+            <div className="grid grid-cols-2 gap-3">
+              {([
+                { value: "patient", icon: User, label: "Patient", desc: "Monitor my health" },
+                { value: "doctor", icon: Stethoscope, label: "Doctor", desc: "Manage my patients" },
+              ] as const).map(({ value, icon: Icon, label, desc }) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => update("role", value)}
+                  className={`flex flex-col items-start p-3.5 rounded-xl border-2 transition-all text-left ${form.role === value ? "border-blue-500 bg-blue-50" : "border-slate-200 hover:border-slate-300"}`}
+                >
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${form.role === value ? "bg-blue-500" : "bg-slate-100"}`}>
+                    <Icon className={`w-4 h-4 ${form.role === value ? "text-white" : "text-slate-500"}`} strokeWidth={1.8} />
+                  </div>
+                  <span className={`text-sm ${form.role === value ? "text-blue-700" : "text-slate-700"}`} style={{ fontWeight: 600 }}>{label}</span>
+                  <span className="text-xs text-slate-400 mt-0.5">{desc}</span>
+                </button>
+              ))}
+            </div>
           </div>
-        )}
 
-        {/* Role selector */}
-        <div>
-          <label className="block text-sm text-slate-700 mb-2" style={{ fontWeight: 600 }}>I am a…</label>
+          {/* Full name */}
+          <div>
+            <label className="block text-sm text-slate-700 mb-1.5" style={{ fontWeight: 600 }}>Full name</label>
+            <input
+              type="text"
+              value={form.name}
+              onChange={(e) => update("name", e.target.value)}
+              placeholder="Jane Smith"
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all text-sm"
+            />
+          </div>
+
+          {/* Email */}
+          <div>
+            <label className="block text-sm text-slate-700 mb-1.5" style={{ fontWeight: 600 }}>Email address</label>
+            <input
+              type="email"
+              value={form.email}
+              onChange={(e) => update("email", e.target.value)}
+              placeholder="you@example.com"
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all text-sm"
+            />
+          </div>
+
+          {/* DOB */}
+          <div>
+            <label className="block text-sm text-slate-700 mb-1.5" style={{ fontWeight: 600 }}>Date of birth</label>
+            <input
+              type="date"
+              value={form.dob}
+              onChange={(e) => update("dob", e.target.value)}
+              max={new Date().toISOString().split("T")[0]}
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all text-sm"
+            />
+          </div>
+
+          {/* Password */}
           <div className="grid grid-cols-2 gap-3">
-            {([
-              { value: "patient", icon: User, label: "Patient", desc: "Monitor my health" },
-              { value: "doctor", icon: Stethoscope, label: "Doctor", desc: "Manage my patients" },
-            ] as const).map(({ value, icon: Icon, label, desc }) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => update("role", value)}
-                className={`flex flex-col items-start p-3.5 rounded-xl border-2 transition-all text-left ${form.role === value ? "border-blue-500 bg-blue-50" : "border-slate-200 hover:border-slate-300"}`}
-              >
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 ${form.role === value ? "bg-blue-500" : "bg-slate-100"}`}>
-                  <Icon className={`w-4 h-4 ${form.role === value ? "text-white" : "text-slate-500"}`} strokeWidth={1.8} />
-                </div>
-                <span className={`text-sm ${form.role === value ? "text-blue-700" : "text-slate-700"}`} style={{ fontWeight: 600 }}>{label}</span>
-                <span className="text-xs text-slate-400 mt-0.5">{desc}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Full name */}
-        <div>
-          <label className="block text-sm text-slate-700 mb-1.5" style={{ fontWeight: 600 }}>Full name</label>
-          <input
-            type="text"
-            value={form.name}
-            onChange={(e) => update("name", e.target.value)}
-            placeholder="Jane Smith"
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all text-sm"
-          />
-        </div>
-
-        {/* Email */}
-        <div>
-          <label className="block text-sm text-slate-700 mb-1.5" style={{ fontWeight: 600 }}>Email address</label>
-          <input
-            type="email"
-            value={form.email}
-            onChange={(e) => update("email", e.target.value)}
-            placeholder="you@example.com"
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all text-sm"
-          />
-        </div>
-
-        {/* DOB */}
-        <div>
-          <label className="block text-sm text-slate-700 mb-1.5" style={{ fontWeight: 600 }}>Date of birth</label>
-          <input
-            type="date"
-            value={form.dob}
-            onChange={(e) => update("dob", e.target.value)}
-            max={new Date().toISOString().split("T")[0]}
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all text-sm"
-          />
-        </div>
-
-        {/* Password */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm text-slate-700 mb-1.5" style={{ fontWeight: 600 }}>Password</label>
-            <div className="relative">
-              <input
-                type={showPass ? "text" : "password"}
-                value={form.password}
-                onChange={(e) => update("password", e.target.value)}
-                placeholder="Min 6 chars"
-                className="w-full px-3 py-3 pr-10 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all text-sm"
-              />
-              <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-                {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
+            <div>
+              <label className="block text-sm text-slate-700 mb-1.5" style={{ fontWeight: 600 }}>Password</label>
+              <div className="relative">
+                <input
+                  type={showPass ? "text" : "password"}
+                  value={form.password}
+                  onChange={(e) => update("password", e.target.value)}
+                  placeholder="Min 6 chars"
+                  className="w-full px-3 py-3 pr-10 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all text-sm"
+                />
+                <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                  {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm text-slate-700 mb-1.5" style={{ fontWeight: 600 }}>Confirm</label>
+              <div className="relative">
+                <input
+                  type={showConfirm ? "text" : "password"}
+                  value={form.confirm}
+                  onChange={(e) => update("confirm", e.target.value)}
+                  placeholder="Repeat password"
+                  className={`w-full px-3 py-3 pr-10 border rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none transition-all text-sm ${form.confirm && form.confirm !== form.password ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100" : "border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"}`}
+                />
+                <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                  {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
           </div>
-          <div>
-            <label className="block text-sm text-slate-700 mb-1.5" style={{ fontWeight: 600 }}>Confirm</label>
-            <div className="relative">
-              <input
-                type={showConfirm ? "text" : "password"}
-                value={form.confirm}
-                onChange={(e) => update("confirm", e.target.value)}
-                placeholder="Repeat password"
-                className={`w-full px-3 py-3 pr-10 border rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none transition-all text-sm ${form.confirm && form.confirm !== form.password ? "border-red-300 focus:border-red-400 focus:ring-2 focus:ring-red-100" : "border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"}`}
-              />
-              <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-                {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-        </div>
 
-        <p className="text-xs text-slate-400">
-          By creating an account, you agree to our{" "}
-          <a href="#" className="text-blue-600 hover:underline">Terms of Service</a> and{" "}
-          <a href="#" className="text-blue-600 hover:underline">Privacy Policy</a>.
+          <p className="text-xs text-slate-400">
+            By creating an account, you agree to our{" "}
+            <a href="#" className="text-blue-600 hover:underline">Terms of Service</a> and{" "}
+            <a href="#" className="text-blue-600 hover:underline">Privacy Policy</a>.
+          </p>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl font-semibold text-sm transition-colors shadow-md shadow-blue-200 flex items-center justify-center gap-2"
+          >
+            {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating account…</> : `Create ${form.role === "doctor" ? "Doctor" : "Patient"} Account`}
+          </button>
+        </form>
+
+        <p className="text-center text-sm text-slate-500 mt-6">
+          Already have an account?{" "}
+          <button onClick={onSwitch} className="text-blue-600 font-semibold hover:text-blue-700 transition-colors">
+            Sign in
+          </button>
         </p>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl font-semibold text-sm transition-colors shadow-md shadow-blue-200 flex items-center justify-center gap-2"
-        >
-          {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating account…</> : `Create ${form.role === "doctor" ? "Doctor" : "Patient"} Account`}
-        </button>
-      </form>
-
-      <p className="text-center text-sm text-slate-500 mt-6">
-        Already have an account?{" "}
-        <button onClick={onSwitch} className="text-blue-600 font-semibold hover:text-blue-700 transition-colors">
-          Sign in
-        </button>
-      </p>
-    </div>
+      </div>
+    </>
   );
 }
 

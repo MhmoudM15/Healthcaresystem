@@ -285,7 +285,6 @@ export default function DoctorDashboard() {
   const total        = patientSummaries.length;
   const inRange      = patientSummaries.filter(p => p.tir >= 70).length;
   const needAttn     = patientSummaries.filter(p => p.riskLevel === "high").length;
-  const avgHba1c     = (patientSummaries.reduce((s, p) => s + p.hba1c, 0) / total).toFixed(1);
   const unreadCount  = alerts.filter(a => a.status === "unread").length;
   const attentionPts = patientSummaries.filter(p => p.tir < 70).sort((a, b) => a.tir - b.tir);
 
@@ -392,7 +391,7 @@ export default function DoctorDashboard() {
             </div>
 
             {/* ── KPI Cards ──────────────────────────────────────────────────── */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
               {[
                 {
                   label: "Total Patients", value: total, unit: "registered",
@@ -408,12 +407,6 @@ export default function DoctorDashboard() {
                   label: "Need Attention", value: needAttn, unit: "high-risk patients",
                   icon: AlertTriangle, bg: "bg-red-50", iconColor: "text-red-600",
                   valColor: "text-red-700", trend: "High risk",
-                },
-                {
-                  label: "Avg HbA1c", value: avgHba1c, unit: "%",
-                  icon: Heart, bg: "bg-violet-50", iconColor: "text-violet-600",
-                  valColor: Number(avgHba1c) >= 8 ? "text-red-700" : Number(avgHba1c) >= 6.5 ? "text-amber-700" : "text-emerald-700",
-                  trend: "Clinic average",
                 },
               ].map(({ label, value, unit, icon: Icon, bg, iconColor, valColor, trend }) => (
                 <div key={label} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
@@ -530,43 +523,7 @@ export default function DoctorDashboard() {
             </div>
 
             {/* ── HbA1c Per Patient ───────────────────────────────────────────── */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-              <div className="flex items-center justify-between mb-5">
-                <div>
-                  <h2 className="text-slate-900 text-sm" style={{ fontWeight: 700 }}>HbA1c by Patient</h2>
-                  <p className="text-slate-400 text-xs mt-0.5">Latest values · Target &lt; 7.0%</p>
-                </div>
-                <div className="flex items-center gap-3 text-xs">
-                  {[
-                    { color: "bg-emerald-500", label: "< 6.5% (Good)"     },
-                    { color: "bg-amber-400",   label: "6.5–8% (Monitor)"  },
-                    { color: "bg-red-500",     label: "≥ 8% (Action)"     },
-                  ].map(({ color, label }) => (
-                    <div key={label} className="flex items-center gap-1.5">
-                      <span className={`w-2.5 h-2.5 rounded-full ${color}`} />
-                      <span className="text-slate-400">{label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <ResponsiveContainer width="100%" height={180}>
-                <BarChart data={hba1cData} margin={{ top: 4, right: 10, left: -20, bottom: 0 }} barSize={32}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
-                  <YAxis domain={[5, 11]} tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} tickCount={4} />
-                  <Tooltip content={<HbA1cTooltip />} />
-                  <ReferenceLine y={7.0} stroke="#10b981" strokeDasharray="4 3" strokeWidth={1.5}
-                    label={{ value: "Target", position: "right", fontSize: 10, fill: "#10b981" }} />
-                  <ReferenceLine y={8.0} stroke="#ef4444" strokeDasharray="4 3" strokeWidth={1.5}
-                    label={{ value: "High", position: "right", fontSize: 10, fill: "#ef4444" }} />
-                  <Bar dataKey="hba1c" radius={[5, 5, 0, 0]}>
-                    {hba1cData.map((entry, i) => (
-                      <Cell key={i} fill={hba1cBarColor(entry.hba1c)} fillOpacity={0.85} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            
 
             {/* ── Patients Needing Attention ─────────────────────────────────── */}
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">

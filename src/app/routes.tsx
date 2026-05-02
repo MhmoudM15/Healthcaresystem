@@ -7,7 +7,6 @@ import DoctorDashboard from "./pages/DoctorDashboard";
 import PatientDetailsPage from "./pages/PatientDetailsPage";
 import GlucoseLogsPage from "./pages/GlucoseLogsPage";
 import MealLogsPage from "./pages/MealLogsPage";
-import AISummaryPage from "./pages/AISummaryPage";
 import AIAssistantPage from "./pages/AIAssistantPage";
 import PatientSettingsPage from "./pages/PatientSettingsPage";
 
@@ -18,7 +17,6 @@ export const router = createBrowserRouter([
   { path: "/dashboard/patient",              Component: PatientDashboard },
   { path: "/dashboard/patient/glucose",      Component: GlucoseLogsPage },
   { path: "/dashboard/patient/meals",        Component: MealLogsPage },
-  { path: "/dashboard/patient/ai-summary",   Component: AISummaryPage },
   { path: "/dashboard/patient/ai-chat",      Component: AIAssistantPage },
   { path: "/dashboard/patient/settings",     Component: PatientSettingsPage },
   { path: "/dashboard/doctor",               Component: DoctorDashboard },
