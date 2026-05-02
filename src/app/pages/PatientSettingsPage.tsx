@@ -491,77 +491,7 @@ export default function PatientSettingsPage() {
             
 
             {/* ── Section 4: Data Export ─────────────────────────────────── */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-              <div className="flex items-center gap-3 mb-5 pb-4 border-b border-slate-100">
-                <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center">
-                  <Download className="w-5 h-5 text-purple-600" strokeWidth={1.8} />
-                </div>
-                <div>
-                  <h2 className="text-slate-900" style={{ fontWeight: 700, fontSize: "1.1rem" }}>Export Health Data</h2>
-                  <p className="text-slate-400 text-xs">Download your glucose and meal logs</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <button
-                  onClick={handleExportCSV}
-                  disabled={exportingCSV}
-                  className="group flex flex-col items-center gap-3 bg-white hover:bg-blue-600 border-2 border-slate-200 hover:border-blue-600 rounded-2xl p-6 shadow-sm transition-all duration-200 hover:shadow-lg hover:shadow-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <div className="w-14 h-14 bg-blue-50 group-hover:bg-white/20 rounded-2xl flex items-center justify-center transition-colors">
-                    {exportingCSV ? (
-                      <Loader2 className="w-7 h-7 text-blue-600 group-hover:text-white animate-spin" />
-                    ) : (
-                      <FileSpreadsheet className="w-7 h-7 text-blue-600 group-hover:text-white transition-colors" strokeWidth={1.8} />
-                    )}
-                  </div>
-                  <div className="text-center">
-                    <p className="text-slate-900 group-hover:text-white text-sm font-semibold transition-colors mb-1">
-                      {exportingCSV ? "Exporting..." : "Export as CSV"}
-                    </p>
-                    <p className="text-slate-500 group-hover:text-white/80 text-xs transition-colors">
-                      Spreadsheet format for analysis
-                    </p>
-                  </div>
-                </button>
-
-                <button
-                  onClick={handleExportPDF}
-                  disabled={exportingPDF}
-                  className="group flex flex-col items-center gap-3 bg-white hover:bg-red-600 border-2 border-slate-200 hover:border-red-600 rounded-2xl p-6 shadow-sm transition-all duration-200 hover:shadow-lg hover:shadow-red-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <div className="w-14 h-14 bg-red-50 group-hover:bg-white/20 rounded-2xl flex items-center justify-center transition-colors">
-                    {exportingPDF ? (
-                      <Loader2 className="w-7 h-7 text-red-600 group-hover:text-white animate-spin" />
-                    ) : (
-                      <FileText className="w-7 h-7 text-red-600 group-hover:text-white transition-colors" strokeWidth={1.8} />
-                    )}
-                  </div>
-                  <div className="text-center">
-                    <p className="text-slate-900 group-hover:text-white text-sm font-semibold transition-colors mb-1">
-                      {exportingPDF ? "Generating..." : "Export as PDF"}
-                    </p>
-                    <p className="text-slate-500 group-hover:text-white/80 text-xs transition-colors">
-                      Formatted report for doctors
-                    </p>
-                  </div>
-                </button>
-              </div>
-
-              <div className="mt-4 bg-purple-50 border border-purple-200 rounded-xl p-4">
-                <div className="flex items-start gap-3">
-                  <Info className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm text-purple-900">
-                    <p className="font-semibold mb-1">Data Export Details</p>
-                    <ul className="text-purple-700 text-xs space-y-1 list-disc list-inside">
-                      <li>Exports include all glucose readings and meal logs from the last 90 days</li>
-                      <li>CSV files can be opened in Excel, Google Sheets, or other spreadsheet software</li>
-                      <li>PDF reports are formatted for easy sharing with healthcare providers</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
+            
 
             {/* ── Save Button ────────────────────────────────────────────── */}
             <div className="sticky bottom-0 bg-white rounded-2xl border border-slate-100 shadow-lg p-5">
