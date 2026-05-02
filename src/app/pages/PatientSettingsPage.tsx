@@ -276,12 +276,7 @@ export default function PatientSettingsPage() {
             <span className="hidden sm:inline">Back to Dashboard</span>
           </button>
           <div className="flex items-center gap-2">
-            <button className="relative p-2 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-semibold">
-                2
-              </span>
-            </button>
+            
           </div>
         </header>
 
