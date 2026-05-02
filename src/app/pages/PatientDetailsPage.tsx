@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router";
 import {
   Activity, LayoutDashboard, Users, LogOut, Menu, X,
   Search, Stethoscope, Bell, ChevronRight,
   Droplets, Calendar, AlertTriangle, CheckCircle,
-  TrendingUp, TrendingDown, Phone, Mail, Pill,
-  User, Heart, Weight, Ruler,
+  TrendingUp, TrendingDown, Phone, Mail,
+  User, Heart, Utensils, Clock,
+  FileText, Send, Loader2, Plus, Trash2,
 } from "lucide-react";
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis,
@@ -19,6 +20,44 @@ interface GlucosePoint { day: string; value: number; }
 interface WeeklyAvg    { week: string; avg: number; }
 interface MealPoint    { day: string; carbs: number; }
 interface HbA1cPoint   { month: string; value: number; }
+
+interface GlucoseLog {
+  id: string;
+  date: string;
+  time: string;
+  value: number;
+  context: "fasting" | "after-meal" | "before-sleep" | "random";
+  notes: string;
+}
+
+interface MealLog {
+  id: string;
+  date: string;
+  time: string;
+  meal: string;
+  type: "breakfast" | "lunch" | "dinner" | "snack";
+  carbs: number;
+}
+
+interface ClinicalNote {
+  id: string;
+  patientId: string;
+  text: string;
+  priority: "routine" | "urgent" | "critical";
+  date: string;
+  time: string;
+  doctorName: string;
+}
+
+const NOTES_KEY = "diacheck_clinical_notes";
+
+function loadNotes(): ClinicalNote[] {
+  try { return JSON.parse(localStorage.getItem(NOTES_KEY) || "[]"); } catch { return []; }
+}
+
+function saveNotes(notes: ClinicalNote[]) {
+  localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+}
 
 interface Patient {
   id: string;
@@ -43,6 +82,8 @@ interface Patient {
   weeklyAvg: WeeklyAvg[];
   mealData: MealPoint[];
   hba1cHistory: HbA1cPoint[];
+  glucoseLogs: GlucoseLog[];
+  mealLogs: MealLog[];
 }
 
 // ─── Mock Patient Data ────────────────────────────────────────────────────────
@@ -86,6 +127,32 @@ const mockPatients: Patient[] = [
       { month: "Jan", value: 8.5 }, { month: "Feb", value: 8.4 },
       { month: "Mar", value: 8.3 }, { month: "Apr", value: 8.2 },
     ],
+    glucoseLogs: [
+      { id: "g1",  date: "Apr 30", time: "7:00 AM",  value: 248, context: "fasting",      notes: "Morning spike, felt dizzy" },
+      { id: "g2",  date: "Apr 30", time: "12:30 PM", value: 188, context: "after-meal",   notes: "" },
+      { id: "g3",  date: "Apr 29", time: "6:45 AM",  value: 221, context: "fasting",      notes: "High again" },
+      { id: "g4",  date: "Apr 29", time: "1:00 PM",  value: 198, context: "after-meal",   notes: "Post-lunch reading" },
+      { id: "g5",  date: "Apr 28", time: "7:15 AM",  value: 182, context: "fasting",      notes: "" },
+      { id: "g6",  date: "Apr 28", time: "9:45 PM",  value: 174, context: "before-sleep", notes: "" },
+      { id: "g7",  date: "Apr 27", time: "7:00 AM",  value: 210, context: "fasting",      notes: "Forgot medication yesterday" },
+      { id: "g8",  date: "Apr 26", time: "6:55 AM",  value: 196, context: "fasting",      notes: "" },
+      { id: "g9",  date: "Apr 25", time: "7:10 AM",  value: 177, context: "fasting",      notes: "" },
+      { id: "g10", date: "Apr 24", time: "7:00 AM",  value: 159, context: "fasting",      notes: "Better this morning" },
+      { id: "g11", date: "Apr 23", time: "12:00 PM", value: 193, context: "after-meal",   notes: "" },
+      { id: "g12", date: "Apr 22", time: "7:05 AM",  value: 163, context: "fasting",      notes: "" },
+    ],
+    mealLogs: [
+      { id: "m1", date: "Apr 30", time: "7:30 AM",  meal: "Scrambled eggs & white toast",     type: "breakfast", carbs: 45 },
+      { id: "m2", date: "Apr 30", time: "12:45 PM", meal: "Rice, beans & fried chicken",       type: "lunch",     carbs: 95 },
+      { id: "m3", date: "Apr 29", time: "8:00 AM",  meal: "Pancakes with syrup",               type: "breakfast", carbs: 110 },
+      { id: "m4", date: "Apr 29", time: "1:15 PM",  meal: "Cheeseburger & fries",              type: "lunch",     carbs: 115 },
+      { id: "m5", date: "Apr 28", time: "8:00 AM",  meal: "Oatmeal with banana",               type: "breakfast", carbs: 58 },
+      { id: "m6", date: "Apr 28", time: "7:00 PM",  meal: "Pasta with tomato sauce & salad",   type: "dinner",    carbs: 88 },
+      { id: "m7", date: "Apr 27", time: "8:15 AM",  meal: "Cereal with whole milk",             type: "breakfast", carbs: 72 },
+      { id: "m8", date: "Apr 27", time: "1:00 PM",  meal: "Club sandwich & chips",             type: "lunch",     carbs: 82 },
+      { id: "m9", date: "Apr 26", time: "7:45 AM",  meal: "Greek yogurt & granola",            type: "breakfast", carbs: 48 },
+      { id: "m10",date: "Apr 26", time: "7:30 PM",  meal: "Grilled steak & mashed potatoes",  type: "dinner",    carbs: 55 },
+    ],
   },
   {
     id: "P-1583",
@@ -125,6 +192,31 @@ const mockPatients: Patient[] = [
       { month: "Nov", value: 8.1 }, { month: "Dec", value: 7.9 },
       { month: "Jan", value: 7.7 }, { month: "Feb", value: 7.6 },
       { month: "Mar", value: 7.5 }, { month: "Apr", value: 7.4 },
+    ],
+    glucoseLogs: [
+      { id: "g1",  date: "Apr 30", time: "7:20 AM",  value: 165, context: "fasting",      notes: "" },
+      { id: "g2",  date: "Apr 30", time: "1:00 PM",  value: 171, context: "after-meal",   notes: "Higher than usual" },
+      { id: "g3",  date: "Apr 29", time: "7:05 AM",  value: 158, context: "fasting",      notes: "" },
+      { id: "g4",  date: "Apr 28", time: "7:30 AM",  value: 144, context: "fasting",      notes: "Good reading" },
+      { id: "g5",  date: "Apr 28", time: "12:45 PM", value: 160, context: "after-meal",   notes: "" },
+      { id: "g6",  date: "Apr 27", time: "10:30 PM", value: 152, context: "before-sleep", notes: "" },
+      { id: "g7",  date: "Apr 26", time: "7:15 AM",  value: 162, context: "fasting",      notes: "" },
+      { id: "g8",  date: "Apr 25", time: "7:00 AM",  value: 167, context: "fasting",      notes: "Stressful week" },
+      { id: "g9",  date: "Apr 24", time: "7:10 AM",  value: 153, context: "fasting",      notes: "" },
+      { id: "g10", date: "Apr 23", time: "1:30 PM",  value: 141, context: "after-meal",   notes: "" },
+      { id: "g11", date: "Apr 22", time: "7:00 AM",  value: 128, context: "fasting",      notes: "Best this week" },
+      { id: "g12", date: "Apr 21", time: "7:05 AM",  value: 149, context: "fasting",      notes: "" },
+    ],
+    mealLogs: [
+      { id: "m1", date: "Apr 30", time: "7:45 AM",  meal: "Boiled eggs & whole wheat toast", type: "breakfast", carbs: 38 },
+      { id: "m2", date: "Apr 30", time: "12:30 PM", meal: "Grilled salmon & brown rice",     type: "lunch",     carbs: 55 },
+      { id: "m3", date: "Apr 29", time: "8:00 AM",  meal: "Congee with vegetables",          type: "breakfast", carbs: 48 },
+      { id: "m4", date: "Apr 29", time: "7:00 PM",  meal: "Stir-fry noodles & tofu",        type: "dinner",    carbs: 72 },
+      { id: "m5", date: "Apr 28", time: "7:30 AM",  meal: "Muesli & low-fat milk",           type: "breakfast", carbs: 52 },
+      { id: "m6", date: "Apr 28", time: "1:00 PM",  meal: "Chicken salad wrap",              type: "lunch",     carbs: 44 },
+      { id: "m7", date: "Apr 27", time: "7:00 PM",  meal: "Steamed fish with bok choy",      type: "dinner",    carbs: 30 },
+      { id: "m8", date: "Apr 26", time: "7:45 AM",  meal: "Fruit smoothie & oats",           type: "breakfast", carbs: 65 },
+      { id: "m9", date: "Apr 26", time: "12:00 PM", meal: "Dim sum (steamed)",               type: "lunch",     carbs: 78 },
     ],
   },
   {
@@ -166,6 +258,30 @@ const mockPatients: Patient[] = [
       { month: "Jan", value: 7.0 }, { month: "Feb", value: 6.9 },
       { month: "Mar", value: 6.9 }, { month: "Apr", value: 6.8 },
     ],
+    glucoseLogs: [
+      { id: "g1",  date: "Apr 30", time: "6:30 AM",  value: 52,  context: "fasting",      notes: "⚠ Low — had juice immediately" },
+      { id: "g2",  date: "Apr 30", time: "8:00 AM",  value: 88,  context: "after-meal",   notes: "Recovered after breakfast" },
+      { id: "g3",  date: "Apr 29", time: "6:45 AM",  value: 68,  context: "fasting",      notes: "Borderline low" },
+      { id: "g4",  date: "Apr 29", time: "2:00 PM",  value: 104, context: "after-meal",   notes: "" },
+      { id: "g5",  date: "Apr 28", time: "6:50 AM",  value: 81,  context: "fasting",      notes: "" },
+      { id: "g6",  date: "Apr 28", time: "10:30 PM", value: 96,  context: "before-sleep", notes: "Snacked before bed" },
+      { id: "g7",  date: "Apr 27", time: "7:00 AM",  value: 94,  context: "fasting",      notes: "" },
+      { id: "g8",  date: "Apr 26", time: "6:40 AM",  value: 109, context: "fasting",      notes: "" },
+      { id: "g9",  date: "Apr 25", time: "1:00 PM",  value: 73,  context: "random",       notes: "Felt shaky, checked" },
+      { id: "g10", date: "Apr 24", time: "6:55 AM",  value: 86,  context: "fasting",      notes: "" },
+      { id: "g11", date: "Apr 23", time: "7:05 AM",  value: 115, context: "fasting",      notes: "" },
+      { id: "g12", date: "Apr 22", time: "11:00 PM", value: 78,  context: "before-sleep", notes: "" },
+    ],
+    mealLogs: [
+      { id: "m1", date: "Apr 30", time: "8:10 AM",  meal: "Orange juice & crackers (low treatment)", type: "snack",     carbs: 30 },
+      { id: "m2", date: "Apr 30", time: "12:30 PM", meal: "Quinoa bowl with vegetables",              type: "lunch",     carbs: 55 },
+      { id: "m3", date: "Apr 29", time: "7:00 AM",  meal: "Whole wheat toast & peanut butter",       type: "breakfast", carbs: 38 },
+      { id: "m4", date: "Apr 29", time: "7:00 PM",  meal: "Grilled chicken & sweet potato",          type: "dinner",    carbs: 42 },
+      { id: "m5", date: "Apr 28", time: "7:30 AM",  meal: "Greek yogurt with berries",               type: "breakfast", carbs: 28 },
+      { id: "m6", date: "Apr 28", time: "1:00 PM",  meal: "Turkey & avocado sandwich",               type: "lunch",     carbs: 45 },
+      { id: "m7", date: "Apr 27", time: "6:45 PM",  meal: "Brown rice & lean beef stir-fry",         type: "dinner",    carbs: 60 },
+      { id: "m8", date: "Apr 27", time: "3:00 PM",  meal: "Apple & almond butter",                   type: "snack",     carbs: 25 },
+    ],
   },
   {
     id: "P-3041",
@@ -205,6 +321,30 @@ const mockPatients: Patient[] = [
       { month: "Nov", value: 7.8 }, { month: "Dec", value: 7.6 },
       { month: "Jan", value: 7.4 }, { month: "Feb", value: 7.3 },
       { month: "Mar", value: 7.2 }, { month: "Apr", value: 7.1 },
+    ],
+    glucoseLogs: [
+      { id: "g1",  date: "Apr 30", time: "7:00 AM",  value: 127, context: "fasting",      notes: "" },
+      { id: "g2",  date: "Apr 30", time: "12:15 PM", value: 134, context: "after-meal",   notes: "" },
+      { id: "g3",  date: "Apr 29", time: "7:10 AM",  value: 134, context: "fasting",      notes: "" },
+      { id: "g4",  date: "Apr 28", time: "7:05 AM",  value: 129, context: "fasting",      notes: "Steady progress" },
+      { id: "g5",  date: "Apr 28", time: "1:30 PM",  value: 142, context: "after-meal",   notes: "" },
+      { id: "g6",  date: "Apr 27", time: "10:00 PM", value: 118, context: "before-sleep", notes: "" },
+      { id: "g7",  date: "Apr 26", time: "7:00 AM",  value: 126, context: "fasting",      notes: "" },
+      { id: "g8",  date: "Apr 25", time: "7:20 AM",  value: 133, context: "fasting",      notes: "" },
+      { id: "g9",  date: "Apr 24", time: "1:00 PM",  value: 139, context: "after-meal",   notes: "Large lunch" },
+      { id: "g10", date: "Apr 23", time: "7:00 AM",  value: 121, context: "fasting",      notes: "" },
+      { id: "g11", date: "Apr 22", time: "7:15 AM",  value: 128, context: "fasting",      notes: "" },
+      { id: "g12", date: "Apr 21", time: "9:30 PM",  value: 115, context: "before-sleep", notes: "" },
+    ],
+    mealLogs: [
+      { id: "m1", date: "Apr 30", time: "7:30 AM",  meal: "Oatmeal with cinnamon & almonds",        type: "breakfast", carbs: 42 },
+      { id: "m2", date: "Apr 30", time: "12:30 PM", meal: "Lentil soup & whole grain bread",        type: "lunch",     carbs: 58 },
+      { id: "m3", date: "Apr 29", time: "7:00 AM",  meal: "Eggs with sautéed spinach",              type: "breakfast", carbs: 12 },
+      { id: "m4", date: "Apr 29", time: "7:30 PM",  meal: "Baked salmon & roasted vegetables",      type: "dinner",    carbs: 35 },
+      { id: "m5", date: "Apr 28", time: "8:00 AM",  meal: "Yogurt parfait with low-sugar granola",  type: "breakfast", carbs: 48 },
+      { id: "m6", date: "Apr 28", time: "1:30 PM",  meal: "Grilled chicken wrap & side salad",     type: "lunch",     carbs: 62 },
+      { id: "m7", date: "Apr 27", time: "7:00 PM",  meal: "Turkey meatballs & zucchini noodles",   type: "dinner",    carbs: 28 },
+      { id: "m8", date: "Apr 26", time: "3:30 PM",  meal: "Apple slices with cottage cheese",      type: "snack",     carbs: 22 },
     ],
   },
   {
@@ -246,6 +386,30 @@ const mockPatients: Patient[] = [
       { month: "Jan", value: 6.7 }, { month: "Feb", value: 6.6 },
       { month: "Mar", value: 6.5 }, { month: "Apr", value: 6.4 },
     ],
+    glucoseLogs: [
+      { id: "g1",  date: "Apr 30", time: "7:00 AM",  value: 103, context: "fasting",      notes: "" },
+      { id: "g2",  date: "Apr 30", time: "11:30 AM", value: 118, context: "after-meal",   notes: "" },
+      { id: "g3",  date: "Apr 29", time: "6:50 AM",  value: 96,  context: "fasting",      notes: "" },
+      { id: "g4",  date: "Apr 29", time: "10:00 PM", value: 101, context: "before-sleep", notes: "" },
+      { id: "g5",  date: "Apr 28", time: "7:05 AM",  value: 114, context: "fasting",      notes: "" },
+      { id: "g6",  date: "Apr 28", time: "1:00 PM",  value: 122, context: "after-meal",   notes: "Slightly elevated" },
+      { id: "g7",  date: "Apr 27", time: "7:00 AM",  value: 95,  context: "fasting",      notes: "Great result!" },
+      { id: "g8",  date: "Apr 26", time: "7:10 AM",  value: 108, context: "fasting",      notes: "" },
+      { id: "g9",  date: "Apr 25", time: "12:30 PM", value: 118, context: "after-meal",   notes: "" },
+      { id: "g10", date: "Apr 24", time: "6:55 AM",  value: 99,  context: "fasting",      notes: "" },
+      { id: "g11", date: "Apr 23", time: "7:00 AM",  value: 104, context: "fasting",      notes: "" },
+      { id: "g12", date: "Apr 22", time: "9:45 PM",  value: 111, context: "before-sleep", notes: "" },
+    ],
+    mealLogs: [
+      { id: "m1", date: "Apr 30", time: "7:15 AM",  meal: "Smoothie bowl with berries & seeds",   type: "breakfast", carbs: 44 },
+      { id: "m2", date: "Apr 30", time: "12:00 PM", meal: "Grilled tuna salad",                    type: "lunch",     carbs: 18 },
+      { id: "m3", date: "Apr 29", time: "7:30 AM",  meal: "Whole wheat toast & avocado",           type: "breakfast", carbs: 35 },
+      { id: "m4", date: "Apr 29", time: "7:00 PM",  meal: "Chicken & vegetable stir-fry",          type: "dinner",    carbs: 30 },
+      { id: "m5", date: "Apr 28", time: "7:00 AM",  meal: "Scrambled eggs & spinach",              type: "breakfast", carbs: 8  },
+      { id: "m6", date: "Apr 28", time: "1:00 PM",  meal: "Brown rice bowl & edamame",             type: "lunch",     carbs: 62 },
+      { id: "m7", date: "Apr 27", time: "6:45 PM",  meal: "Baked cod & roasted sweet potato",      type: "dinner",    carbs: 40 },
+      { id: "m8", date: "Apr 27", time: "3:30 PM",  meal: "Handful of mixed nuts",                 type: "snack",     carbs: 10 },
+    ],
   },
   {
     id: "P-4217",
@@ -285,6 +449,31 @@ const mockPatients: Patient[] = [
       { month: "Nov", value: 10.2 }, { month: "Dec", value: 9.8 },
       { month: "Jan", value: 9.6 }, { month: "Feb", value: 9.4 },
       { month: "Mar", value: 9.2 }, { month: "Apr", value: 9.1 },
+    ],
+    glucoseLogs: [
+      { id: "g1",  date: "Apr 30", time: "7:00 AM",  value: 214, context: "fasting",      notes: "Very high, discussed with doctor" },
+      { id: "g2",  date: "Apr 30", time: "1:00 PM",  value: 241, context: "after-meal",   notes: "" },
+      { id: "g3",  date: "Apr 29", time: "6:45 AM",  value: 211, context: "fasting",      notes: "" },
+      { id: "g4",  date: "Apr 29", time: "12:30 PM", value: 228, context: "after-meal",   notes: "Large meal" },
+      { id: "g5",  date: "Apr 28", time: "7:10 AM",  value: 207, context: "fasting",      notes: "" },
+      { id: "g6",  date: "Apr 28", time: "10:00 PM", value: 196, context: "before-sleep", notes: "" },
+      { id: "g7",  date: "Apr 27", time: "7:00 AM",  value: 219, context: "fasting",      notes: "Skipped Empagliflozin" },
+      { id: "g8",  date: "Apr 26", time: "7:05 AM",  value: 195, context: "fasting",      notes: "" },
+      { id: "g9",  date: "Apr 25", time: "7:15 AM",  value: 178, context: "fasting",      notes: "Lower after walk" },
+      { id: "g10", date: "Apr 24", time: "1:00 PM",  value: 234, context: "after-meal",   notes: "High-carb lunch" },
+      { id: "g11", date: "Apr 23", time: "7:00 AM",  value: 186, context: "fasting",      notes: "" },
+      { id: "g12", date: "Apr 22", time: "7:10 AM",  value: 202, context: "fasting",      notes: "" },
+    ],
+    mealLogs: [
+      { id: "m1", date: "Apr 30", time: "7:30 AM",  meal: "White bread & butter with orange juice",     type: "breakfast", carbs: 88 },
+      { id: "m2", date: "Apr 30", time: "1:15 PM",  meal: "Large pasta portion with garlic bread",      type: "lunch",     carbs: 130 },
+      { id: "m3", date: "Apr 29", time: "8:00 AM",  meal: "Pancake stack with maple syrup",             type: "breakfast", carbs: 120 },
+      { id: "m4", date: "Apr 29", time: "12:30 PM", meal: "Fried rice & spring rolls",                  type: "lunch",     carbs: 118 },
+      { id: "m5", date: "Apr 28", time: "7:45 AM",  meal: "Cereal (high-sugar) & full-fat milk",        type: "breakfast", carbs: 95 },
+      { id: "m6", date: "Apr 28", time: "7:00 PM",  meal: "Beef stew, potatoes & dinner roll",          type: "dinner",    carbs: 100 },
+      { id: "m7", date: "Apr 27", time: "8:00 AM",  meal: "Waffles with berries",                       type: "breakfast", carbs: 105 },
+      { id: "m8", date: "Apr 27", time: "3:00 PM",  meal: "Chips & soda",                               type: "snack",     carbs: 80 },
+      { id: "m9", date: "Apr 26", time: "1:00 PM",  meal: "Burrito bowl (large)",                       type: "lunch",     carbs: 110 },
     ],
   },
   {
@@ -326,6 +515,30 @@ const mockPatients: Patient[] = [
       { month: "Jan", value: 6.3 }, { month: "Feb", value: 6.2 },
       { month: "Mar", value: 6.2 }, { month: "Apr", value: 6.1 },
     ],
+    glucoseLogs: [
+      { id: "g1",  date: "Apr 30", time: "7:05 AM",  value: 109, context: "fasting",      notes: "" },
+      { id: "g2",  date: "Apr 30", time: "11:45 AM", value: 121, context: "after-meal",   notes: "" },
+      { id: "g3",  date: "Apr 29", time: "7:00 AM",  value: 112, context: "fasting",      notes: "" },
+      { id: "g4",  date: "Apr 28", time: "7:10 AM",  value: 108, context: "fasting",      notes: "Good morning reading" },
+      { id: "g5",  date: "Apr 28", time: "1:00 PM",  value: 119, context: "after-meal",   notes: "" },
+      { id: "g6",  date: "Apr 27", time: "9:45 PM",  value: 106, context: "before-sleep", notes: "" },
+      { id: "g7",  date: "Apr 26", time: "7:00 AM",  value: 110, context: "fasting",      notes: "" },
+      { id: "g8",  date: "Apr 25", time: "7:15 AM",  value: 116, context: "fasting",      notes: "" },
+      { id: "g9",  date: "Apr 24", time: "12:00 PM", value: 107, context: "after-meal",   notes: "Light lunch" },
+      { id: "g10", date: "Apr 23", time: "7:05 AM",  value: 121, context: "fasting",      notes: "Slightly higher" },
+      { id: "g11", date: "Apr 22", time: "7:00 AM",  value: 113, context: "fasting",      notes: "" },
+      { id: "g12", date: "Apr 21", time: "10:00 PM", value: 106, context: "before-sleep", notes: "" },
+    ],
+    mealLogs: [
+      { id: "m1", date: "Apr 30", time: "7:30 AM",  meal: "Low-fat yogurt & mixed berries",          type: "breakfast", carbs: 38 },
+      { id: "m2", date: "Apr 30", time: "12:00 PM", meal: "Grilled chicken breast & steamed broccoli", type: "lunch",   carbs: 15 },
+      { id: "m3", date: "Apr 29", time: "7:15 AM",  meal: "Oatmeal with flaxseeds",                  type: "breakfast", carbs: 40 },
+      { id: "m4", date: "Apr 29", time: "7:00 PM",  meal: "Vegetable curry & small rice portion",    type: "dinner",    carbs: 55 },
+      { id: "m5", date: "Apr 28", time: "7:30 AM",  meal: "Whole wheat toast & cottage cheese",      type: "breakfast", carbs: 32 },
+      { id: "m6", date: "Apr 28", time: "12:30 PM", meal: "Lentil dal & small naan",                 type: "lunch",     carbs: 60 },
+      { id: "m7", date: "Apr 27", time: "6:30 PM",  meal: "Grilled paneer & sautéed vegetables",     type: "dinner",    carbs: 24 },
+      { id: "m8", date: "Apr 27", time: "3:00 PM",  meal: "Roasted chickpeas",                       type: "snack",     carbs: 20 },
+    ],
   },
 ];
 
@@ -358,6 +571,131 @@ const GenericTooltip = ({ active, payload, label, unit }: any) => {
     </div>
   );
 };
+
+// ─── Write Note Modal ─────────────────────────────────────────────────────────
+function WriteNoteModal({
+  patient,
+  onClose,
+  onSave,
+}: {
+  patient: { id: string; name: string };
+  onClose: () => void;
+  onSave: (note: ClinicalNote) => void;
+}) {
+  const [text,     setText]     = useState("");
+  const [priority, setPriority] = useState<ClinicalNote["priority"]>("routine");
+  const [saving,   setSaving]   = useState(false);
+
+  const handleSave = async () => {
+    if (!text.trim()) return;
+    setSaving(true);
+    await new Promise(r => setTimeout(r, 700));
+    const now  = new Date();
+    const note: ClinicalNote = {
+      id:         `note-${Date.now()}`,
+      patientId:  patient.id,
+      text:       text.trim(),
+      priority,
+      date: now.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+      time: now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
+      doctorName: "Dr. Sarah Chen",
+    };
+    onSave(note);
+    setSaving(false);
+    onClose();
+  };
+
+  const priorityConfig = {
+    routine:  { bg: "border-slate-200 bg-slate-50 text-slate-700",     active: "border-blue-500 bg-blue-50 text-blue-700"    },
+    urgent:   { bg: "border-slate-200 bg-slate-50 text-slate-700",     active: "border-amber-500 bg-amber-50 text-amber-700" },
+    critical: { bg: "border-slate-200 bg-slate-50 text-slate-700",     active: "border-red-500 bg-red-50 text-red-700"       },
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg z-10 overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
+              <FileText className="w-5 h-5 text-blue-600" strokeWidth={1.8} />
+            </div>
+            <div>
+              <h3 className="text-slate-900 text-sm" style={{ fontWeight: 700 }}>Write Clinical Note</h3>
+              <p className="text-slate-400 text-xs mt-0.5">Visible to {patient.name} immediately</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-5 space-y-4">
+          {/* Priority */}
+          <div>
+            <label className="block text-sm text-slate-700 mb-2" style={{ fontWeight: 600 }}>Priority Level</label>
+            <div className="grid grid-cols-3 gap-2">
+              {(["routine", "urgent", "critical"] as const).map(p => (
+                <button
+                  key={p}
+                  onClick={() => setPriority(p)}
+                  className={`py-2.5 rounded-xl border text-xs capitalize transition-all ${priority === p ? priorityConfig[p].active : priorityConfig[p].bg}`}
+                  style={{ fontWeight: priority === p ? 600 : 400 }}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Note text */}
+          <div>
+            <label className="block text-sm text-slate-700 mb-2" style={{ fontWeight: 600 }}>
+              Clinical Note
+              <span className="text-slate-400 font-normal ml-2">(will appear on patient dashboard)</span>
+            </label>
+            <textarea
+              value={text}
+              onChange={e => setText(e.target.value)}
+              placeholder={`e.g. Your glucose readings have been consistently high this week. Please increase water intake, avoid high-carb meals, and ensure you're taking Metformin with food. Schedule a follow-up in 2 weeks.`}
+              rows={5}
+              autoFocus
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all text-sm resize-none"
+            />
+            <p className="text-slate-400 text-xs mt-1.5">{text.length} characters</p>
+          </div>
+
+          {/* Info banner */}
+          <div className="flex items-start gap-2.5 bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">
+            <CheckCircle className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" strokeWidth={1.8} />
+            <p className="text-blue-700 text-xs leading-relaxed">
+              This note will be <strong>instantly visible</strong> on the patient's dashboard. Make sure your message is clear and actionable.
+            </p>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex gap-3 px-6 py-4 border-t border-slate-100">
+          <button onClick={onClose} className="flex-1 py-3 border border-slate-200 text-slate-600 rounded-xl text-sm font-semibold hover:bg-slate-50 transition-colors">
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={!text.trim() || saving}
+            className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+          >
+            {saving
+              ? <><Loader2 className="w-4 h-4 animate-spin" />Sending…</>
+              : <><Send className="w-4 h-4" />Send Note to Patient</>
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ─── Patient List Card ────────────────────────────────────────────────────────
 function PatientCard({ patient, selected, onClick }: { patient: Patient; selected: boolean; onClick: () => void }) {
@@ -404,6 +742,23 @@ export default function PatientDetailsPage() {
   const [selectedPatient, setSelectedPatient] = useState<Patient>(mockPatients[0]);
   const [search, setSearch] = useState("");
   const [riskFilter, setRiskFilter] = useState<"all" | "high" | "moderate" | "low">("all");
+  const [logsTab, setLogsTab] = useState<"glucose" | "meal">("glucose");
+  const [showWriteNote, setShowWriteNote] = useState(false);
+  const [clinicalNotes, setClinicalNotes] = useState<ClinicalNote[]>(() => loadNotes());
+
+  const handleSaveNote = (note: ClinicalNote) => {
+    const updated = [note, ...clinicalNotes];
+    setClinicalNotes(updated);
+    saveNotes(updated);
+  };
+
+  const handleDeleteNote = (noteId: string) => {
+    const updated = clinicalNotes.filter(n => n.id !== noteId);
+    setClinicalNotes(updated);
+    saveNotes(updated);
+  };
+
+  const patientNotes = clinicalNotes.filter(n => n.patientId === selectedPatient.id);
 
   const handleSignOut = () => { signOut(); navigate("/"); };
 
@@ -541,7 +896,7 @@ export default function PatientDetailsPage() {
                     key={patient.id}
                     patient={patient}
                     selected={selectedPatient.id === patient.id}
-                    onClick={() => setSelectedPatient(patient)}
+                    onClick={() => { setSelectedPatient(patient); setLogsTab("glucose"); }}
                   />
                 ))
               )}
@@ -563,10 +918,19 @@ export default function PatientDetailsPage() {
                       <h1 className="text-slate-900" style={{ fontWeight: 800, fontSize: "1.3rem" }}>{p.name}</h1>
                       <p className="text-slate-400 text-sm mt-0.5">{p.id} · {p.age} yrs · {p.gender} · Born {p.dob}</p>
                     </div>
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold ${risk.bg} ${risk.text} ${risk.border} border`}>
-                      <span className={`w-2 h-2 rounded-full ${risk.dot}`} />
-                      {risk.label}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-semibold ${risk.bg} ${risk.text} ${risk.border} border`}>
+                        <span className={`w-2 h-2 rounded-full ${risk.dot}`} />
+                        {risk.label}
+                      </span>
+                      <button
+                        onClick={() => setShowWriteNote(true)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        Write Note
+                      </button>
+                    </div>
                   </div>
                   <div className="flex flex-wrap gap-4 mt-3 text-sm text-slate-500">
                     <div className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5 text-slate-400" />{p.email}</div>
@@ -620,41 +984,97 @@ export default function PatientDetailsPage() {
               ))}
             </div>
 
-            {/* ── Info + Medications ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {/* Physical Info */}
-              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-                <h3 className="text-slate-900 text-sm mb-4" style={{ fontWeight: 700 }}>Physical Information</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    { label: "Height", value: `${p.height} cm` },
-                    { label: "Weight", value: `${p.weight} kg` },
-                    { label: "BMI", value: p.bmi },
-                    { label: "Diagnosis", value: p.diagnosis },
-                  ].map(({ label, value }) => (
-                    <div key={label} className="bg-slate-50 rounded-xl p-3">
-                      <p className="text-slate-400 text-xs mb-0.5">{label}</p>
-                      <p className="text-slate-900 text-sm" style={{ fontWeight: 600 }}>{value}</p>
-                    </div>
-                  ))}
+            {/* ── Physical Info ── */}
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+              <h3 className="text-slate-900 text-sm mb-4" style={{ fontWeight: 700 }}>Physical Information</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { label: "Height",    value: `${p.height} cm` },
+                  { label: "Weight",    value: `${p.weight} kg` },
+                  { label: "BMI",       value: p.bmi            },
+                  { label: "Diagnosis", value: p.diagnosis      },
+                ].map(({ label, value }) => (
+                  <div key={label} className="bg-slate-50 rounded-xl p-3">
+                    <p className="text-slate-400 text-xs mb-0.5">{label}</p>
+                    <p className="text-slate-900 text-sm" style={{ fontWeight: 600 }}>{value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ── Clinical Notes ── */}
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-slate-50">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-blue-500" strokeWidth={1.8} />
+                  <h3 className="text-slate-900 text-sm" style={{ fontWeight: 700 }}>Clinical Notes</h3>
+                  {patientNotes.length > 0 && (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 font-semibold">{patientNotes.length}</span>
+                  )}
                 </div>
+                <button
+                  onClick={() => setShowWriteNote(true)}
+                  className="flex items-center gap-1.5 text-xs text-blue-600 font-semibold hover:text-blue-700 transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />Add Note
+                </button>
               </div>
 
-              {/* Medications */}
-              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-                <div className="flex items-center gap-2 mb-4">
-                  <Pill className="w-4 h-4 text-slate-400" />
-                  <h3 className="text-slate-900 text-sm" style={{ fontWeight: 700 }}>Current Medications</h3>
+              {patientNotes.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-10 px-5 text-center">
+                  <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center mb-3">
+                    <FileText className="w-5 h-5 text-slate-300" strokeWidth={1.8} />
+                  </div>
+                  <p className="text-slate-500 text-sm" style={{ fontWeight: 600 }}>No notes yet</p>
+                  <p className="text-slate-400 text-xs mt-1">Clinical notes you write will appear here and on the patient's dashboard.</p>
+                  <button
+                    onClick={() => setShowWriteNote(true)}
+                    className="mt-4 flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold transition-colors"
+                  >
+                    <Plus className="w-3.5 h-3.5" />Write First Note
+                  </button>
                 </div>
-                <div className="space-y-2">
-                  {p.medications.map(med => (
-                    <div key={med} className="flex items-center gap-2.5 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2.5">
-                      <div className="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0" />
-                      <span className="text-blue-800 text-sm" style={{ fontWeight: 500 }}>{med}</span>
-                    </div>
-                  ))}
+              ) : (
+                <div className="divide-y divide-slate-50">
+                  {patientNotes.map(note => {
+                    const priorityCfg = {
+                      routine:  { bg: "bg-blue-50",   text: "text-blue-700",   border: "border-blue-100",   dot: "bg-blue-500"   },
+                      urgent:   { bg: "bg-amber-50",  text: "text-amber-700",  border: "border-amber-100",  dot: "bg-amber-500"  },
+                      critical: { bg: "bg-red-50",    text: "text-red-700",    border: "border-red-100",    dot: "bg-red-500"    },
+                    }[note.priority];
+                    return (
+                      <div key={note.id} className="px-5 py-4 hover:bg-slate-50/50 transition-colors group">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start gap-3 flex-1 min-w-0">
+                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5 ${priorityCfg.bg}`}>
+                              <FileText className={`w-3.5 h-3.5 ${priorityCfg.text}`} strokeWidth={1.8} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                <span className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full border capitalize font-semibold ${priorityCfg.bg} ${priorityCfg.text} ${priorityCfg.border}`}>
+                                  <span className={`w-1.5 h-1.5 rounded-full ${priorityCfg.dot}`} />{note.priority}
+                                </span>
+                                <span className="text-slate-400 text-xs">{note.doctorName}</span>
+                                <span className="text-slate-300 text-xs">·</span>
+                                <span className="text-slate-400 text-xs flex items-center gap-1">
+                                  <Clock className="w-2.5 h-2.5" />{note.date} at {note.time}
+                                </span>
+                              </div>
+                              <p className="text-slate-700 text-sm leading-relaxed">{note.text}</p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleDeleteNote(note.id)}
+                            className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-50 rounded-lg text-slate-300 hover:text-red-400 transition-all flex-shrink-0"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              </div>
+              )}
             </div>
 
             {/* ── Glucose Trend Chart ── */}
@@ -739,9 +1159,203 @@ export default function PatientDetailsPage() {
             {/* ── HbA1c History ── */}
             
 
+            {/* ── Glucose & Meal Logs History ────────────────────────────────── */}
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+
+              {/* Tab Header */}
+              <div className="flex border-b border-slate-100">
+                <button
+                  onClick={() => setLogsTab("glucose")}
+                  className={`flex-1 flex items-center justify-center gap-2 px-5 py-4 text-sm transition-all border-b-2 ${
+                    logsTab === "glucose"
+                      ? "border-blue-600 text-blue-700 bg-blue-50/40"
+                      : "border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                  }`}
+                  style={{ fontWeight: logsTab === "glucose" ? 600 : 400 }}
+                >
+                  <Droplets className="w-4 h-4" strokeWidth={1.8} />
+                  Glucose Logs
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${logsTab === "glucose" ? "bg-blue-100 text-blue-700" : "bg-slate-100 text-slate-400"}`}>
+                    {p.glucoseLogs.length}
+                  </span>
+                </button>
+                <button
+                  onClick={() => setLogsTab("meal")}
+                  className={`flex-1 flex items-center justify-center gap-2 px-5 py-4 text-sm transition-all border-b-2 ${
+                    logsTab === "meal"
+                      ? "border-emerald-600 text-emerald-700 bg-emerald-50/40"
+                      : "border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50"
+                  }`}
+                  style={{ fontWeight: logsTab === "meal" ? 600 : 400 }}
+                >
+                  <Utensils className="w-4 h-4" strokeWidth={1.8} />
+                  Meal Logs
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${logsTab === "meal" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-400"}`}>
+                    {p.mealLogs.length}
+                  </span>
+                </button>
+              </div>
+
+              {/* Column Headers */}
+              {logsTab === "glucose" ? (
+                <>
+                  <div className="grid grid-cols-4 px-5 py-2.5 bg-slate-50 border-b border-slate-100 text-xs text-slate-400" style={{ fontWeight: 600 }}>
+                    <span>Date & Time</span>
+                    <span>Value</span>
+                    <span>Context</span>
+                    <span>Notes</span>
+                  </div>
+                  <div className="divide-y divide-slate-50 max-h-80 overflow-y-auto">
+                    {p.glucoseLogs.map(log => {
+                      const isHigh = log.value >= 126;
+                      const isLow  = log.value < 70;
+                      const valColor  = isHigh ? "text-red-700"     : isLow ? "text-blue-700"     : "text-emerald-700";
+                      const badgeCls  = isHigh ? "bg-red-50 text-red-600 border border-red-100"
+                                      : isLow  ? "bg-blue-50 text-blue-600 border border-blue-100"
+                                               : "bg-emerald-50 text-emerald-600 border border-emerald-100";
+                      const ctxColors: Record<string, string> = {
+                        "fasting":      "bg-blue-50 text-blue-700",
+                        "after-meal":   "bg-amber-50 text-amber-700",
+                        "before-sleep": "bg-purple-50 text-purple-700",
+                        "random":       "bg-slate-100 text-slate-600",
+                      };
+                      return (
+                        <div key={log.id} className="grid grid-cols-4 items-center px-5 py-3.5 hover:bg-slate-50/60 transition-colors gap-2">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                              <Droplets className="w-3.5 h-3.5 text-blue-500" strokeWidth={1.8} />
+                            </div>
+                            <div>
+                              <p className="text-slate-700 text-xs" style={{ fontWeight: 600 }}>{log.date}</p>
+                              <p className="text-slate-400 text-xs flex items-center gap-1 mt-0.5">
+                                <Clock className="w-2.5 h-2.5" />{log.time}
+                              </p>
+                            </div>
+                          </div>
+                          <div>
+                            <span className={`text-sm ${valColor}`} style={{ fontWeight: 700 }}>{log.value}</span>
+                            <span className="text-slate-400 text-xs ml-1">mg/dL</span>
+                            <div className="mt-0.5">
+                              <span className={`text-xs px-1.5 py-0.5 rounded-md ${badgeCls}`} style={{ fontWeight: 600 }}>
+                                {isHigh ? "High" : isLow ? "Low" : "Normal"}
+                              </span>
+                            </div>
+                          </div>
+                          <div>
+                            <span className={`text-xs px-2 py-1 rounded-lg capitalize ${ctxColors[log.context]}`} style={{ fontWeight: 500 }}>
+                              {log.context.replace("-", " ")}
+                            </span>
+                          </div>
+                          <p className="text-slate-400 text-xs truncate">{log.notes || <span className="text-slate-200">—</span>}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="grid grid-cols-4 px-5 py-2.5 bg-slate-50 border-b border-slate-100 text-xs text-slate-400" style={{ fontWeight: 600 }}>
+                    <span>Date & Time</span>
+                    <span className="col-span-2">Meal</span>
+                    <span>Carbs</span>
+                  </div>
+                  <div className="divide-y divide-slate-50 max-h-80 overflow-y-auto">
+                    {p.mealLogs.map(log => {
+                      const isOver  = log.carbs > 75;
+                      const carbColor = isOver ? "text-amber-700" : "text-emerald-700";
+                      const carbBadge = isOver ? "bg-amber-50 text-amber-600 border border-amber-100" : "bg-emerald-50 text-emerald-600 border border-emerald-100";
+                      const typeColors: Record<string, string> = {
+                        breakfast: "bg-orange-50 text-orange-700",
+                        lunch:     "bg-sky-50 text-sky-700",
+                        dinner:    "bg-indigo-50 text-indigo-700",
+                        snack:     "bg-pink-50 text-pink-700",
+                      };
+                      return (
+                        <div key={log.id} className="grid grid-cols-4 items-center px-5 py-3.5 hover:bg-slate-50/60 transition-colors gap-2">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 bg-emerald-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                              <Utensils className="w-3.5 h-3.5 text-emerald-500" strokeWidth={1.8} />
+                            </div>
+                            <div>
+                              <p className="text-slate-700 text-xs" style={{ fontWeight: 600 }}>{log.date}</p>
+                              <p className="text-slate-400 text-xs flex items-center gap-1 mt-0.5">
+                                <Clock className="w-2.5 h-2.5" />{log.time}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="col-span-2 pr-2">
+                            <p className="text-slate-800 text-sm truncate" style={{ fontWeight: 500 }}>{log.meal}</p>
+                            <span className={`text-xs px-2 py-0.5 rounded-lg mt-0.5 inline-block capitalize ${typeColors[log.type]}`} style={{ fontWeight: 500 }}>
+                              {log.type}
+                            </span>
+                          </div>
+                          <div>
+                            <span className={`text-sm ${carbColor}`} style={{ fontWeight: 700 }}>{log.carbs}g</span>
+                            <div className="mt-0.5">
+                              <span className={`text-xs px-1.5 py-0.5 rounded-md ${carbBadge}`} style={{ fontWeight: 600 }}>
+                                {isOver ? "Over target" : "On target"}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+
+              {/* Footer summary */}
+              <div className="px-5 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                {logsTab === "glucose" ? (
+                  <>
+                    <p className="text-slate-400 text-xs">
+                      {p.glucoseLogs.length} readings · Avg{" "}
+                      <span className="text-slate-700 font-semibold">
+                        {Math.round(p.glucoseLogs.reduce((s, l) => s + l.value, 0) / p.glucoseLogs.length)} mg/dL
+                      </span>
+                    </p>
+                    <p className="text-slate-400 text-xs">
+                      In range:{" "}
+                      <span className="text-emerald-600 font-semibold">
+                        {Math.round((p.glucoseLogs.filter(l => l.value >= 70 && l.value < 126).length / p.glucoseLogs.length) * 100)}%
+                      </span>
+                      {" "}· High:{" "}
+                      <span className="text-red-600 font-semibold">
+                        {Math.round((p.glucoseLogs.filter(l => l.value >= 126).length / p.glucoseLogs.length) * 100)}%
+                      </span>
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-slate-400 text-xs">
+                      {p.mealLogs.length} meals logged · Avg carbs{" "}
+                      <span className="text-slate-700 font-semibold">
+                        {Math.round(p.mealLogs.reduce((s, l) => s + l.carbs, 0) / p.mealLogs.length)}g
+                      </span>
+                    </p>
+                    <p className="text-slate-400 text-xs">
+                      Over target:{" "}
+                      <span className="text-amber-600 font-semibold">
+                        {p.mealLogs.filter(l => l.carbs > 75).length} / {p.mealLogs.length} meals
+                      </span>
+                    </p>
+                  </>
+                )}
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
+
+      {/* ── Write Note Modal ─────────────────────────────────────────────────── */}
+      {showWriteNote && (
+        <WriteNoteModal
+          patient={{ id: selectedPatient.id, name: selectedPatient.name }}
+          onClose={() => setShowWriteNote(false)}
+          onSave={handleSaveNote}
+        />
+      )}
     </div>
   );
 }
